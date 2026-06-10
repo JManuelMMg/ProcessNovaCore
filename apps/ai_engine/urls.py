@@ -8,4 +8,8 @@ urlpatterns = [
     path('api/chat/', views.api_ai_chat, name='api_chat'),
     path('api/inventory/analyze/', views.api_analizar_inventario, name='api_analizar_inventario'),
     path('api/crm/analyze/', views.api_analizar_cliente_crm, name='api_analizar_cliente_crm'),
+    path('api/finance/analyze/', views.api_analizar_finanzas, name='api_analizar_finanzas'),
+    path('api/inventory/prices/', views.api_recomendar_precios, name='api_recomendar_precios'),
+    path('api/hr/analyze/', views.api_analizar_rrhh, name='api_analizar_rrhh'),
+    path('api/logistics/analyze/', views.api_analizar_logistica, name='api_analizar_logistica'),
 ]

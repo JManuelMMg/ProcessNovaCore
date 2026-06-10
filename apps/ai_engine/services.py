@@ -11,6 +11,8 @@ TOOL_PERMISSIONS = {
     'analizar_inventario_y_sugerir_compras': ['admin_central', 'branch_manager'],
     'analizar_cliente_crm': ['admin_central', 'branch_manager', 'employee'],
     'analizar_finanzas': ['admin_central', 'branch_manager'],
+    'analizar_rrhh': ['admin_central'],
+    'analizar_logistica': ['admin_central', 'branch_manager'],
     'recomendar_precios': ['admin_central', 'branch_manager'],
 }
 
@@ -149,6 +151,39 @@ TOOLS = [
                 "required": ["productos"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "analizar_rrhh",
+            "description": "Analiza indicadores de recursos humanos: empleados, asistencia, permisos y nomina. Devuelve JSON.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "empleados": {"type": "array", "items": {"type": "object"}},
+                    "asistencias": {"type": "array", "items": {"type": "object"}},
+                    "permisos": {"type": "array", "items": {"type": "object"}},
+                    "nominas": {"type": "array", "items": {"type": "object"}}
+                },
+                "required": ["empleados", "asistencias", "permisos", "nominas"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "analizar_logistica",
+            "description": "Analiza pedidos, envios, intentos de entrega, rutas y costos logisticos. Devuelve JSON.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "envios": {"type": "array", "items": {"type": "object"}},
+                    "pedidos": {"type": "array", "items": {"type": "object"}},
+                    "rutas": {"type": "array", "items": {"type": "object"}}
+                },
+                "required": ["envios", "pedidos", "rutas"]
+            }
+        }
     }
 ]
 
@@ -156,11 +191,11 @@ SYSTEM_PROMPT_OPERATIVO = """Eres Nova, el Motor de Inteligencia Operativa y asi
 
 TU DOBLE FUNCIÓN:
 1. **Interacción conversacional normal**: Cuando el usuario hable de temas generales, respondas en español de forma natural, amigable y útil.
-2. **Análisis técnico con Function Calling**: Cuando el usuario pida análisis de inventario, CRM, finanzas o recomendaciones de precios, usa las herramientas disponibles para generar resultados estructurados.
+2. **Análisis técnico con Function Calling**: Cuando el usuario pida análisis de inventario, CRM, finanzas, RRHH, logística o recomendaciones de precios, usa las herramientas disponibles para generar resultados estructurados.
 
 REGLAS:
 - Para conversaciones normales (saludos, preguntas sobre el sistema, ayuda general): responde de forma conversacional, clara y en español.
-- Para análisis técnicos: usa las funciones (function calling) disponibles.
+- Para análisis técnicos: usa las funciones (function calling) disponibles para inventario, CRM, finanzas, RRHH, logística y precios.
 - Si detectas stock crítico o problemas financieros, marca 'alerta' como true en tu respuesta.
 - Siempre prioriza la precisión cuando uses funciones, pero mantén la naturalidad en conversaciones normales."""
 
@@ -362,6 +397,99 @@ def recomendar_precios(productos: List[Dict]) -> Dict:
     }
 
 
+def analizar_rrhh(empleados: List[Dict], asistencias: List[Dict], permisos: List[Dict], nominas: List[Dict]) -> Dict:
+    """
+    Analiza salud operativa de RRHH con datos resumidos del modulo.
+    """
+    activos = [e for e in empleados if e.get("status") == "active"]
+    bajas = [e for e in empleados if e.get("status") in ("inactive", "terminated")]
+    tardanzas = [a for a in asistencias if a.get("status") == "late"]
+    ausencias = [a for a in asistencias if a.get("status") == "absent"]
+    permisos_pendientes = [p for p in permisos if p.get("status") == "pending"]
+    nomina_total = sum(n.get("net_salary", 0) for n in nominas)
+    salario_promedio = sum(e.get("salary", 0) for e in activos) / len(activos) if activos else 0
+    rotacion_riesgo = len(bajas) > max(1, len(empleados) * 0.15)
+    asistencia_riesgo = (len(tardanzas) + len(ausencias)) > max(2, len(activos) * 0.2)
+
+    recomendaciones = []
+    if permisos_pendientes:
+        recomendaciones.append("Revisar permisos pendientes para evitar atrasos administrativos.")
+    if asistencia_riesgo:
+        recomendaciones.append("Analizar patrones de ausencias y retardos por area o turno.")
+    if rotacion_riesgo:
+        recomendaciones.append("Revisar causas de baja y permanencia del personal.")
+    if not recomendaciones:
+        recomendaciones.append("Mantener seguimiento mensual de asistencia, rotacion y nomina.")
+
+    return {
+        "resumen": {
+            "total_empleados": len(empleados),
+            "empleados_activos": len(activos),
+            "bajas_o_inactivos": len(bajas),
+            "salario_promedio": float(round(salario_promedio, 2)),
+            "nomina_neta_periodo": float(round(nomina_total, 2)),
+        },
+        "asistencia": {
+            "registros": len(asistencias),
+            "tardanzas": len(tardanzas),
+            "ausencias": len(ausencias),
+            "riesgo": asistencia_riesgo,
+        },
+        "permisos": {
+            "total": len(permisos),
+            "pendientes": len(permisos_pendientes),
+        },
+        "alerta": rotacion_riesgo or asistencia_riesgo or len(permisos_pendientes) > 0,
+        "recomendaciones": recomendaciones,
+    }
+
+
+def analizar_logistica(envios: List[Dict], pedidos: List[Dict], rutas: List[Dict]) -> Dict:
+    """
+    Analiza estado operativo de logistica y entregas.
+    """
+    estados = {}
+    for envio in envios:
+        estado = envio.get("status", "sin_estado")
+        estados[estado] = estados.get(estado, 0) + 1
+
+    fallidos = [e for e in envios if e.get("status") in ("failed", "returned")]
+    transito = [e for e in envios if e.get("status") in ("picked_up", "in_transit", "out_for_delivery")]
+    intentos_altos = [e for e in envios if e.get("delivery_attempts", 0) >= 2]
+    costo_total = sum(e.get("shipping_cost", 0) for e in envios)
+    pedidos_pendientes = [p for p in pedidos if p.get("status") in ("pending", "confirmed", "processing")]
+    rutas_activas = [r for r in rutas if r.get("is_active")]
+
+    recomendaciones = []
+    if fallidos:
+        recomendaciones.append("Priorizar recontacto de entregas fallidas o devueltas.")
+    if intentos_altos:
+        recomendaciones.append("Validar direccion y telefono antes de nuevos intentos.")
+    if pedidos_pendientes:
+        recomendaciones.append("Revisar pedidos pendientes para programar despacho.")
+    if not rutas_activas and envios:
+        recomendaciones.append("Asignar rutas activas para mejorar trazabilidad.")
+    if not recomendaciones:
+        recomendaciones.append("Mantener monitoreo de costo por envio y tiempos de entrega.")
+
+    return {
+        "resumen": {
+            "total_envios": len(envios),
+            "total_pedidos": len(pedidos),
+            "rutas_activas": len(rutas_activas),
+            "envios_en_transito": len(transito),
+            "envios_fallidos": len(fallidos),
+            "costo_total_envios": float(round(costo_total, 2)),
+            "costo_promedio_envio": float(round(costo_total / len(envios), 2)) if envios else 0,
+        },
+        "estados": estados,
+        "intentos_altos": len(intentos_altos),
+        "pedidos_pendientes": len(pedidos_pendientes),
+        "alerta": bool(fallidos or intentos_altos or pedidos_pendientes),
+        "recomendaciones": recomendaciones,
+    }
+
+
 def chat_with_ai(user_message, conversation_history=None, user=None, organization=None):
     """
     Función de chat general con soporte para function calling y persistencia en BD.
@@ -417,6 +545,10 @@ def chat_with_ai(user_message, conversation_history=None, user=None, organizatio
             tool_response = analizar_finanzas(**function_args)
         elif function_name == "recomendar_precios":
             tool_response = recomendar_precios(**function_args)
+        elif function_name == "analizar_rrhh":
+            tool_response = analizar_rrhh(**function_args)
+        elif function_name == "analizar_logistica":
+            tool_response = analizar_logistica(**function_args)
         
         function_called = function_name
         

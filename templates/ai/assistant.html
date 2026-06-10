@@ -68,6 +68,16 @@
                         📦 Analizar Inventario <span class="text-xs">(Solo Dueños/Gerentes)</span>
                     </div>
                 {% endif %}
+
+                {% if can_recommend_prices %}
+                    <button onclick="ejecutarAccion('precios')" class="w-full text-left px-4 py-3 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition text-emerald-800 font-medium">
+                        $ Recomendar Precios
+                    </button>
+                {% else %}
+                    <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
+                        $ Recomendar Precios <span class="text-xs">(Solo Dueños/Gerentes)</span>
+                    </div>
+                {% endif %}
                 
                 {% if can_analyze_crm %}
                     <button onclick="ejecutarAccion('cliente')" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition text-purple-800 font-medium">
@@ -76,6 +86,36 @@
                 {% else %}
                     <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
                         👤 Analizar Cliente (CRM) <span class="text-xs">(Solo Dueños/Gerentes)</span>
+                    </div>
+                {% endif %}
+
+                {% if can_analyze_finance %}
+                    <button onclick="ejecutarAccion('finanzas')" class="w-full text-left px-4 py-3 bg-amber-50 hover:bg-amber-100 rounded-lg transition text-amber-800 font-medium">
+                        Finanzas: Flujo y Margen
+                    </button>
+                {% else %}
+                    <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
+                        Finanzas <span class="text-xs">(Solo Dueños/Gerentes)</span>
+                    </div>
+                {% endif %}
+
+                {% if can_analyze_hr %}
+                    <button onclick="ejecutarAccion('rrhh')" class="w-full text-left px-4 py-3 bg-rose-50 hover:bg-rose-100 rounded-lg transition text-rose-800 font-medium">
+                        RRHH: Asistencia y Nomina
+                    </button>
+                {% else %}
+                    <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
+                        RRHH <span class="text-xs">(Solo Admin)</span>
+                    </div>
+                {% endif %}
+
+                {% if can_analyze_logistics %}
+                    <button onclick="ejecutarAccion('logistica')" class="w-full text-left px-4 py-3 bg-cyan-50 hover:bg-cyan-100 rounded-lg transition text-cyan-800 font-medium">
+                        Logistica: Envios y Rutas
+                    </button>
+                {% else %}
+                    <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
+                        Logistica <span class="text-xs">(Solo Dueños/Gerentes)</span>
                     </div>
                 {% endif %}
             </div>
@@ -144,9 +184,21 @@ async function ejecutarAccion(tipo) {
     if (tipo === 'inventario') {
         endpoint = '{% url "ai_engine:api_analizar_inventario" %}';
         mensaje = 'Analizando inventario...';
+    } else if (tipo === 'precios') {
+        endpoint = '{% url "ai_engine:api_recomendar_precios" %}';
+        mensaje = 'Calculando recomendaciones de precios...';
     } else if (tipo === 'cliente') {
         endpoint = '{% url "ai_engine:api_analizar_cliente_crm" %}';
         mensaje = 'Analizando cliente CRM...';
+    } else if (tipo === 'finanzas') {
+        endpoint = '{% url "ai_engine:api_analizar_finanzas" %}';
+        mensaje = 'Analizando finanzas de los ultimos 30 dias...';
+    } else if (tipo === 'rrhh') {
+        endpoint = '{% url "ai_engine:api_analizar_rrhh" %}';
+        mensaje = 'Analizando RRHH, asistencia y nomina...';
+    } else if (tipo === 'logistica') {
+        endpoint = '{% url "ai_engine:api_analizar_logistica" %}';
+        mensaje = 'Analizando envios, pedidos y rutas...';
     }
     
     addMessage(mensaje, 'ai');
@@ -171,12 +223,23 @@ async function ejecutarAccion(tipo) {
         }
         
         mostrarResultados(tipo, data);
-        addMessage(`He completado el análisis de ${tipo === 'inventario' ? 'inventario' : 'CRM'}. Los resultados están en el panel lateral.`, 'ai');
+        addMessage(`He completado el analisis de ${nombreModulo(tipo)}. Los resultados estan en el panel lateral.`, 'ai');
         
     } catch (error) {
         removeTypingIndicator(typingId);
         addMessage('Lo siento, hubo un error al ejecutar la acción.', 'ai');
     }
+}
+
+function nombreModulo(tipo) {
+    return {
+        inventario: 'inventario',
+        precios: 'precios',
+        cliente: 'CRM',
+        finanzas: 'finanzas',
+        rrhh: 'RRHH',
+        logistica: 'logistica'
+    }[tipo] || tipo;
 }
 
 function mostrarResultados(tipo, datos) {
@@ -257,6 +320,121 @@ function mostrarResultados(tipo, datos) {
                     ${datos.recomendaciones.map(r => `<li>${r}</li>`).join('')}
                 </ul>
             </div>
+        `;
+    } else if (tipo === 'precios' || tipo === 'recomendar_precios') {
+        html = `
+            <p class="text-sm text-gray-600 mb-3">Productos evaluados: ${datos.total_productos}</p>
+            <div class="space-y-3">
+                ${datos.recomendaciones.map(r => `
+                    <div class="border border-emerald-200 bg-emerald-50 rounded-lg p-4">
+                        <p class="font-semibold text-gray-900">${r.producto_nombre}</p>
+                        <div class="grid grid-cols-2 gap-2 mt-3 text-sm">
+                            <div class="bg-white rounded p-2">
+                                <p class="text-gray-500">Actual</p>
+                                <p class="font-bold">$${r.precio_actual.toLocaleString()}</p>
+                            </div>
+                            <div class="bg-white rounded p-2">
+                                <p class="text-gray-500">Sugerido</p>
+                                <p class="font-bold text-emerald-700">$${r.precio_sugerido.toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-3">${r.justificacion}</p>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else if (tipo === 'finanzas' || tipo === 'analizar_finanzas') {
+        html = `
+            <div class="${datos.alerta ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'} border rounded-lg p-4 mb-4">
+                <p class="font-semibold ${datos.alerta ? 'text-red-800' : 'text-green-800'}">
+                    ${datos.alerta ? 'Atencion financiera requerida' : 'Finanzas estables'}
+                </p>
+                <p class="text-sm ${datos.alerta ? 'text-red-700' : 'text-green-700'}">
+                    Margen: ${datos.resumen.margen_porcentaje}%
+                </p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="p-3 bg-green-50 rounded-lg">
+                    <p class="text-xs text-green-700">Ingresos</p>
+                    <p class="text-lg font-bold text-green-800">$${datos.resumen.total_ingresos.toLocaleString()}</p>
+                </div>
+                <div class="p-3 bg-red-50 rounded-lg">
+                    <p class="text-xs text-red-700">Gastos</p>
+                    <p class="text-lg font-bold text-red-800">$${datos.resumen.total_gastos.toLocaleString()}</p>
+                </div>
+                <div class="p-3 bg-blue-50 rounded-lg col-span-2">
+                    <p class="text-xs text-blue-700">Utilidad</p>
+                    <p class="text-lg font-bold text-blue-800">$${datos.resumen.utilidad.toLocaleString()}</p>
+                </div>
+            </div>
+            <p class="font-semibold text-gray-800 mb-2">Recomendaciones:</p>
+            <ul class="list-disc list-inside text-sm text-gray-700">
+                ${datos.recomendaciones.map(r => `<li>${r}</li>`).join('')}
+            </ul>
+        `;
+    } else if (tipo === 'rrhh' || tipo === 'analizar_rrhh') {
+        html = `
+            <div class="${datos.alerta ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'} border rounded-lg p-4 mb-4">
+                <p class="font-semibold ${datos.alerta ? 'text-amber-800' : 'text-green-800'}">
+                    ${datos.alerta ? 'Hay pendientes de RRHH' : 'RRHH sin alertas criticas'}
+                </p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="p-3 bg-blue-50 rounded-lg">
+                    <p class="text-xs text-blue-700">Activos</p>
+                    <p class="text-lg font-bold text-blue-800">${datos.resumen.empleados_activos}</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-lg">
+                    <p class="text-xs text-slate-700">Total</p>
+                    <p class="text-lg font-bold text-slate-800">${datos.resumen.total_empleados}</p>
+                </div>
+                <div class="p-3 bg-rose-50 rounded-lg">
+                    <p class="text-xs text-rose-700">Ausencias</p>
+                    <p class="text-lg font-bold text-rose-800">${datos.asistencia.ausencias}</p>
+                </div>
+                <div class="p-3 bg-amber-50 rounded-lg">
+                    <p class="text-xs text-amber-700">Permisos pendientes</p>
+                    <p class="text-lg font-bold text-amber-800">${datos.permisos.pendientes}</p>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 mb-3">Nomina neta periodo: <strong>$${datos.resumen.nomina_neta_periodo.toLocaleString()}</strong></p>
+            <p class="font-semibold text-gray-800 mb-2">Recomendaciones:</p>
+            <ul class="list-disc list-inside text-sm text-gray-700">
+                ${datos.recomendaciones.map(r => `<li>${r}</li>`).join('')}
+            </ul>
+        `;
+    } else if (tipo === 'logistica' || tipo === 'analizar_logistica') {
+        html = `
+            <div class="${datos.alerta ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'} border rounded-lg p-4 mb-4">
+                <p class="font-semibold ${datos.alerta ? 'text-amber-800' : 'text-green-800'}">
+                    ${datos.alerta ? 'Logistica requiere seguimiento' : 'Operacion logistica estable'}
+                </p>
+                <p class="text-sm ${datos.alerta ? 'text-amber-700' : 'text-green-700'}">
+                    ${datos.pedidos_pendientes} pedidos pendientes, ${datos.resumen.envios_fallidos} envios fallidos.
+                </p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="p-3 bg-cyan-50 rounded-lg">
+                    <p class="text-xs text-cyan-700">Envios</p>
+                    <p class="text-lg font-bold text-cyan-800">${datos.resumen.total_envios}</p>
+                </div>
+                <div class="p-3 bg-blue-50 rounded-lg">
+                    <p class="text-xs text-blue-700">En transito</p>
+                    <p class="text-lg font-bold text-blue-800">${datos.resumen.envios_en_transito}</p>
+                </div>
+                <div class="p-3 bg-red-50 rounded-lg">
+                    <p class="text-xs text-red-700">Fallidos</p>
+                    <p class="text-lg font-bold text-red-800">${datos.resumen.envios_fallidos}</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-lg">
+                    <p class="text-xs text-slate-700">Costo promedio</p>
+                    <p class="text-lg font-bold text-slate-800">$${datos.resumen.costo_promedio_envio.toLocaleString()}</p>
+                </div>
+            </div>
+            <p class="font-semibold text-gray-800 mb-2">Recomendaciones:</p>
+            <ul class="list-disc list-inside text-sm text-gray-700">
+                ${datos.recomendaciones.map(r => `<li>${r}</li>`).join('')}
+            </ul>
         `;
     }
     
