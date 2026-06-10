@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Factura {{ invoice.number }}{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <a href="{% url 'finance:invoice_list' %}" class="text-green-600 hover:text-green-900 mb-4 inline-flex items-center gap-2">← Volver a facturas</a>
+    <h1 class="text-3xl font-bold text-gray-800 mt-4">Factura {{ invoice.number }}</h1>
+    {% if invoice.cfdi_status == 'stamped' %}
+    <span class="inline-block mt-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">CFDI Timbrada</span>
+    {% else %}
+    <span class="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">Pendiente de timbrar</span>
+    {% endif %}
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold mb-4">Información</h2>
+        <dl class="space-y-2 text-sm">
+            <div class="flex justify-between"><dt class="text-gray-500">Cliente</dt><dd class="font-medium">{{ invoice.customer.name }}</dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500">RFC Receptor</dt><dd>{{ invoice.customer.rfc|default:"XAXX010101000" }}</dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500">Fecha</dt><dd>{{ invoice.date }}</dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500">Uso CFDI</dt><dd>{{ invoice.uso_cfdi }}</dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500">Forma de pago</dt><dd>{{ invoice.forma_pago }}</dd></div>
+            {% if invoice.cfdi_uuid %}
+            <div class="flex justify-between"><dt class="text-gray-500">UUID</dt><dd class="text-xs break-all">{{ invoice.cfdi_uuid }}</dd></div>
+            {% endif %}
+            {% if invoice.sale %}
+            <div class="flex justify-between"><dt class="text-gray-500">Venta origen</dt><dd><a href="{% url 'sales:sale_detail' invoice.sale.pk %}" class="text-blue-600">#{{ invoice.sale.id }}</a></dd></div>
+            {% endif %}
+        </dl>
+    </div>
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold mb-4">Totales</h2>
+        <div class="space-y-2">
+            <div class="flex justify-between"><span>Subtotal</span><span>${{ invoice.subtotal }}</span></div>
+            <div class="flex justify-between"><span>IVA (16%)</span><span>${{ invoice.tax }}</span></div>
+            <div class="flex justify-between text-lg font-bold border-t pt-2"><span>Total</span><span class="text-green-600">${{ invoice.total }}</span></div>
+        </div>
+        <div class="mt-6 flex flex-wrap gap-2">
+            {% if invoice.cfdi_status != 'stamped' %}
+            <a href="{% url 'finance:invoice_stamp' invoice.pk %}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold">Timbrar CFDI</a>
+            {% endif %}
+            {% if invoice.xml_content %}
+            <a href="{% url 'finance:invoice_download_xml' invoice.pk %}" class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 text-sm font-semibold">Descargar XML</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<div class="bg-white rounded-xl shadow-md p-6">
+    <h2 class="text-xl font-bold mb-4">Conceptos</h2>
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-2 text-left text-xs uppercase text-gray-500">Descripción</th>
+                <th class="px-4 py-2 text-center text-xs uppercase text-gray-500">Cant.</th>
+                <th class="px-4 py-2 text-right text-xs uppercase text-gray-500">Precio</th>
+                <th class="px-4 py-2 text-right text-xs uppercase text-gray-500">Subtotal</th>
+                <th class="px-4 py-2 text-right text-xs uppercase text-gray-500">IVA</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for item in items %}
+            <tr>
+                <td class="px-4 py-2">{{ item.description }}</td>
+                <td class="px-4 py-2 text-center">{{ item.quantity }}</td>
+                <td class="px-4 py-2 text-right">${{ item.unit_price }}</td>
+                <td class="px-4 py-2 text-right">${{ item.subtotal }}</td>
+                <td class="px-4 py-2 text-right">${{ item.tax_amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

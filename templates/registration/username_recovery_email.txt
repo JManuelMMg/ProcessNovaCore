@@ -1,0 +1,17 @@
+Hola,
+
+Recibimos una solicitud para recuperar el nombre de usuario asociado a esta dirección de correo electrónico.
+
+{% if users|length == 1 %}
+Tu nombre de usuario es: {{ users.0.username }}
+{% else %}
+Los nombres de usuario asociados a este correo son:
+{% for user in users %}
+- {{ user.username }}
+{% endfor %}
+{% endif %}
+
+Si no solicitaste esta información, puedes ignorar este correo electrónico.
+
+Atentamente,
+El equipo de ProcessNova

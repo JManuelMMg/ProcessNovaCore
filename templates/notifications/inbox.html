@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Correo{% endblock %}
+{% block content %}
+<div class="mb-8 flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Bandeja de entrada</h1>
+        {% if configured %}<p class="text-gray-500 text-sm">Conectado a {{ request.user.email|default:"tu cuenta Gmail" }}</p>{% endif %}
+    </div>
+    <a href="{% url 'notifications:compose' %}" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold">✉ Redactar</a>
+</div>
+
+{% if error %}
+<div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl">
+    <p class="font-semibold">Correo no disponible</p>
+    <p class="text-sm mt-1">{{ error }}</p>
+    <p class="text-sm mt-2">Agrega tu Gmail en <code class="bg-yellow-100 px-1 rounded">.env</code>: <code>EMAIL_HOST_USER=tu@gmail.com</code></p>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-xl shadow-md overflow-hidden">
+    {% if emails %}
+    <div class="divide-y">
+        {% for mail in emails %}
+        <div class="p-4 hover:bg-gray-50">
+            <div class="flex justify-between items-start mb-1">
+                <p class="font-semibold text-gray-800 text-sm">{{ mail.from }}</p>
+                <p class="text-xs text-gray-400">{{ mail.date }}</p>
+            </div>
+            <p class="font-medium text-gray-700 mb-2">{{ mail.subject }}</p>
+            <p class="text-sm text-gray-500 line-clamp-2">{{ mail.body|truncatewords:40 }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif configured and not error %}
+    <div class="px-6 py-16 text-center text-gray-500">No hay correos en la bandeja</div>
+    {% endif %}
+</div>
+{% endblock %}

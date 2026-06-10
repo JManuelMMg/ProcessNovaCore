@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Finanzas - Ingresos{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Ingresos</h1>
+    <p class="text-gray-600">Registro de ingresos</p>
+</div>
+<div class="bg-white rounded-xl shadow-md overflow-hidden">
+    {% if incomes %}
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Fecha</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Cliente</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Factura</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Monto</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Descripción</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for income in incomes %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 text-sm text-gray-600">{{ income.date }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">{{ income.customer.name|default:"-" }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">{{ income.invoice.number|default:"-" }}</td>
+                <td class="px-6 py-4 text-sm font-medium text-green-600">${{ income.amount }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">{{ income.description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="px-6 py-16 text-center">
+        <p class="text-gray-500 text-lg">No hay ingresos registrados</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

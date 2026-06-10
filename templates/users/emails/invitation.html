@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h2 style="color: #1d4ed8;">Invitación a ProcessNova</h2>
+  <p>Hola{% if invitation.first_name %} <strong>{{ invitation.first_name }}</strong>{% endif %},</p>
+  <p>Has sido invitado a unirte a <strong>{{ organization.name }}</strong>.</p>
+  <ul>
+    <li><strong>Rol:</strong> {{ role_label }}</li>
+    {% if branch %}<li><strong>Sucursal:</strong> {{ branch.name }}</li>{% endif %}
+  </ul>
+  <p>
+    <a href="{{ accept_url }}" style="display: inline-block; background: #1d4ed8; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+      Crear mi cuenta
+    </a>
+  </p>
+  <p style="color: #666; font-size: 14px;">Este enlace expira el {{ expires_at|date:"d/m/Y H:i" }}.</p>
+</body>
+</html>

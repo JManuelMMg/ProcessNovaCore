@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Venta #{{ sale.id }}{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <a href="{% url 'sales:sale_list' %}" class="text-blue-600 hover:text-blue-900">← Volver al historial</a>
+    <h1 class="text-3xl font-bold text-gray-800 mt-4">Ticket de Venta #{{ sale.id }}</h1>
+    <p class="text-gray-600">{{ sale.created_at|date:"d/m/Y H:i" }} — {{ sale.branch.name|default:"Sin sucursal" }}</p>
+</div>
+<div class="bg-white rounded-xl shadow-md p-8 max-w-2xl">
+    <div class="border-b pb-4 mb-4">
+        <p><strong>Cajero:</strong> {{ sale.created_by.get_full_name|default:sale.created_by.username }}</p>
+        <p><strong>Estado:</strong> {{ sale.get_status_display }}</p>
+    </div>
+    <table class="w-full mb-6">
+        <thead>
+            <tr class="border-b">
+                <th class="text-left py-2">Producto</th>
+                <th class="text-center py-2">Cant.</th>
+                <th class="text-right py-2">Precio</th>
+                <th class="text-right py-2">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr class="border-b border-gray-100">
+                <td class="py-2">{{ item.product.name }}</td>
+                <td class="text-center py-2">{{ item.quantity }}</td>
+                <td class="text-right py-2">${{ item.unit_price }}</td>
+                <td class="text-right py-2">${{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="text-right space-y-1 text-lg">
+        <p><strong>Total:</strong> <span class="text-green-600 font-bold">${{ sale.total }}</span></p>
+        <p class="text-gray-600">Pagado: ${{ sale.paid_amount }}</p>
+        {% if sale.change_amount > 0 %}
+        <p class="text-blue-600">Cambio: ${{ sale.change_amount }}</p>
+        {% endif %}
+    </div>
+    {% for payment in payments %}
+    <p class="mt-4 text-sm text-gray-500">Método: {{ payment.get_method_display }}</p>
+    {% endfor %}
+    <div class="mt-6 flex gap-3">
+        <button onclick="window.print()" class="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900">Imprimir</button>
+        {% if can.finance %}
+        <a href="{% url 'finance:invoice_from_sale' sale.pk %}" class="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700">Generar Factura CFDI</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

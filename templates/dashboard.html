@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - ProcessNova{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">¡Bienvenido, {{ user.get_full_name|default:user.username }}!</h1>
+    <p class="text-gray-600">Panel de control{% if current_branch %} — {{ current_branch.name }}{% endif %}</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <a href="{% url 'inventory:product_list' %}" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
+        <p class="text-gray-500 text-sm font-medium">Productos</p>
+        <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_products|default:0 }}</p>
+    </a>
+    <a href="{% url 'inventory:stock_list' %}" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
+        <p class="text-gray-500 text-sm font-medium">Stock Bajo</p>
+        <p class="text-3xl font-bold {% if low_stock %}text-red-600{% else %}text-gray-800{% endif %} mt-2">{{ low_stock|default:0 }}</p>
+    </a>
+    <a href="{% url 'sales:sale_list' %}" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
+        <p class="text-gray-500 text-sm font-medium">Ventas Hoy</p>
+        <p class="text-3xl font-bold text-gray-800 mt-2">{{ sales_today|default:0 }}</p>
+    </a>
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <p class="text-gray-500 text-sm font-medium">Ingresos Hoy</p>
+        <p class="text-3xl font-bold text-green-600 mt-2">${{ revenue_today|default:0|floatformat:2 }}</p>
+    </div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Acciones Rápidas</h2>
+        <div class="space-y-3">
+            {% if can.pos %}
+            <a href="{% url 'sales:pos' %}" class="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition">
+                <span class="font-medium text-gray-800">Abrir Punto de Venta</span>
+            </a>
+            {% endif %}
+            {% if can.inventory_create %}
+            <a href="{% url 'inventory:product_create' %}" class="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
+                <span class="font-medium text-gray-800">Nuevo Producto</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Tu cuenta</h2>
+        <div class="space-y-2 text-gray-600">
+            <p><strong>Rol:</strong> {{ user_role_label }}</p>
+            {% if current_organization %}<p><strong>Empresa:</strong> {{ current_organization.name }}</p>{% endif %}
+            {% if current_branch %}<p><strong>Sucursal activa:</strong> {{ current_branch.name }}</p>{% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

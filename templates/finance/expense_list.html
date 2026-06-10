@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Finanzas - Gastos{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Gastos</h1>
+    <p class="text-gray-600">Registro de gastos</p>
+</div>
+<div class="bg-white rounded-xl shadow-md overflow-hidden">
+    {% if expenses %}
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Fecha</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Categoría</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Monto</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Descripción</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for expense in expenses %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 text-sm text-gray-600">{{ expense.date }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">{{ expense.get_category_display }}</td>
+                <td class="px-6 py-4 text-sm font-medium text-red-600">${{ expense.amount }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">{{ expense.description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="px-6 py-16 text-center">
+        <p class="text-gray-500 text-lg">No hay gastos registrados</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

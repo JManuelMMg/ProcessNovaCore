@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Categorías{% endblock %}
+{% block content %}
+<div class="mb-8 flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Categorías</h1>
+        <p class="text-gray-600">Organiza tu inventario por categorías</p>
+    </div>
+    <a href="{% url 'inventory:category_create' %}" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold">+ Nueva Categoría</a>
+</div>
+<div class="bg-white rounded-xl shadow-md overflow-hidden">
+    {% if categories %}
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Nombre</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Padre</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Descripción</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for cat in categories %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 font-medium">{{ cat.name }}</td>
+                <td class="px-6 py-4 text-gray-600">{{ cat.parent.name|default:"—" }}</td>
+                <td class="px-6 py-4 text-gray-500 text-sm">{{ cat.description|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="px-6 py-16 text-center text-gray-500">
+        <p class="mb-4">No hay categorías aún</p>
+        <a href="{% url 'inventory:category_create' %}" class="text-blue-600 font-medium">Crear la primera</a>
+    </div>
+    {% endif %}
+</div>
+<div class="mt-4">
+    <a href="{% url 'inventory:product_list' %}" class="text-gray-600 hover:text-blue-600">← Volver a productos</a>
+</div>
+{% endblock %}

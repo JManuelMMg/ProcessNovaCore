@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo Cliente{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <a href="{% url 'crm:customer_list' %}" class="text-purple-600 hover:text-purple-900 mb-4 inline-flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Volver a clientes
+    </a>
+    <h1 class="text-3xl font-bold text-gray-800 mt-4">Nuevo Cliente</h1>
+</div>
+<div class="bg-white rounded-xl shadow-md p-8 max-w-2xl">
+    <p class="text-gray-500 mb-6">Formulario de creación de cliente en desarrollo. Puedes usar el panel de administración.</p>
+    <a href="/admin/crm/customer/add/" class="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-semibold">
+        Ir a Admin
+    </a>
+</div>
+{% endblock %}

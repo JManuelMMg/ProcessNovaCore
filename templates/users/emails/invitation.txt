@@ -1,0 +1,14 @@
+Hola{% if invitation.first_name %} {{ invitation.first_name }}{% endif %},
+
+Has sido invitado a unirte a {{ organization.name }} en ProcessNova.
+
+Rol: {{ role_label }}
+{% if branch %}Sucursal: {{ branch.name }}{% endif %}
+
+Para crear tu cuenta, visita el siguiente enlace (válido hasta {{ expires_at|date:"d/m/Y H:i" }}):
+
+{{ accept_url }}
+
+Si no esperabas esta invitación, puedes ignorar este correo.
+
+— Equipo ProcessNova
