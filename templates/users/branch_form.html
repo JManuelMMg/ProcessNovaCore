@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-{% block title %}Nueva Sucursal{% endblock %}
+{% block title %}{% if branch %}Editar Sucursal — {{ branch.name }}{% else %}Nueva Sucursal{% endif %}{% endblock %}
 {% block content %}
 <div class="mb-8">
     <a href="{% url 'users:branch_list' %}" class="text-blue-600">← Volver a sucursales</a>
-    <h1 class="text-3xl font-bold text-gray-800 mt-4">Nueva Sucursal</h1>
+    <h1 class="text-3xl font-bold text-gray-800 mt-4">{% if branch %}Editar Sucursal — {{ branch.name }}{% else %}Nueva Sucursal{% endif %}</h1>
 </div>
 <div class="bg-white rounded-xl shadow-md p-8 max-w-lg">
     <form method="post">
@@ -14,7 +14,7 @@
             {{ field }}
         </div>
         {% endfor %}
-        <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold">Crear Sucursal</button>
+        <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold">{% if branch %}Guardar Cambios{% else %}Crear Sucursal{% endif %}</button>
     </form>
 </div>
 {% endblock %}

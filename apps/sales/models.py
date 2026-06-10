@@ -186,9 +186,12 @@ class Sale(TenantAwareModel):
 
     def save(self, *args, **kwargs):
         if not self.number:
-            # Generate sale number
-            last_sale = Sale.objects.filter(organization=self.organization).order_by('-id').first()
-            self.number = f'VEN-{self.created_at.year}-{str(last_sale.id + 1 if last_sale else 1).zfill(6)}'
+            # Usamos timezone.now() porque created_at aún no existe en un INSERT
+            from django.utils import timezone as tz
+            year = tz.now().year
+            # Conteo seguro: evita race condition usando count + 1
+            count = Sale.objects.filter(organization=self.organization).count() + 1
+            self.number = f'VEN-{year}-{str(count).zfill(6)}'
         super().save(*args, **kwargs)
 
     def calculate_total(self):
@@ -222,8 +225,9 @@ class SaleItem(TenantAwareModel):
                 self.unit_price = self.product.price
             if not self.cost_price:
                 self.cost_price = self.product.cost
+        from decimal import Decimal
         self.subtotal = (self.unit_price * self.quantity) - self.discount_amount
-        self.tax_amount = self.subtotal * (self.tax_rate / 100)
+        self.tax_amount = self.subtotal * (Decimal(str(self.tax_rate)) / Decimal('100'))
         self.total = self.subtotal + self.tax_amount
         super().save(*args, **kwargs)
 

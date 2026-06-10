@@ -1,15 +1,22 @@
 {% extends 'base.html' %}
 {% block title %}{{ product.name }} - Producto{% endblock %}
 {% block content %}
-<div class="mb-8">
-    <a href="{% url 'inventory:product_list' %}" class="text-blue-600 hover:text-blue-900 mb-4 inline-flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-        Volver a productos
+<div class="mb-8 flex justify-between items-start">
+    <div>
+        <a href="{% url 'inventory:product_list' %}" class="text-blue-600 hover:text-blue-900 mb-4 inline-flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Volver a productos
+        </a>
+        <h1 class="text-3xl font-bold text-gray-800 mt-4">{{ product.name }}</h1>
+        <p class="text-gray-600">SKU: {{ product.sku }}{% if product.barcode %} | Código: {{ product.barcode }}{% endif %}</p>
+    </div>
+    {% if request.user_role == 'admin_central' or request.user_role == 'branch_manager' %}
+    <a href="{% url 'inventory:product_edit' product.id %}" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold shadow-md shadow-blue-100 hover:shadow-lg transition">
+        Editar Producto
     </a>
-    <h1 class="text-3xl font-bold text-gray-800 mt-4">{{ product.name }}</h1>
-    <p class="text-gray-600">SKU: {{ product.sku }}{% if product.barcode %} | Código: {{ product.barcode }}{% endif %}</p>
+    {% endif %}
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="bg-white rounded-xl shadow-md p-6">

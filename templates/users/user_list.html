@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Equipo{% endblock %}
+{% block title %}Equipo — {{ current_organization.name }}{% endblock %}
 {% block content %}
 <div class="mb-8 flex justify-between items-center">
     <div>
@@ -7,20 +7,49 @@
         <p class="text-gray-600">Usuarios de {{ current_organization.name }}</p>
     </div>
     <div class="flex gap-2">
-        <a href="{% url 'users:user_invite' %}" class="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold">✉ Invitar por correo</a>
-        <a href="{% url 'users:user_create' %}" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold">+ Crear manual</a>
+        <a href="{% url 'users:user_invite' %}" class="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold transition">✉ Invitar por correo</a>
+        <a href="{% url 'users:user_create' %}" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold transition">+ Crear manual</a>
     </div>
 </div>
+
 {% if pending_invites %}
 <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-    <h3 class="font-semibold text-yellow-800 mb-2">Invitaciones pendientes</h3>
-    <ul class="space-y-1 text-sm text-yellow-700">
-        {% for inv in pending_invites %}
-        <li>{{ inv.email }} — {{ inv.get_role_display }}{% if not inv.is_valid %} (expirada){% endif %}</li>
-        {% endfor %}
-    </ul>
+    <h3 class="font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+        <span>⏳</span> Invitaciones pendientes ({{ pending_invites.count }})
+    </h3>
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-yellow-700 text-left">
+                <th class="pb-2">Correo</th>
+                <th class="pb-2">Rol</th>
+                <th class="pb-2">Expira</th>
+                <th class="pb-2">Estado</th>
+                <th class="pb-2">Acción</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-yellow-100">
+            {% for inv in pending_invites %}
+            <tr class="text-yellow-800">
+                <td class="py-2">{{ inv.email }}</td>
+                <td class="py-2">{{ inv.get_role_display }}</td>
+                <td class="py-2">{{ inv.expires_at|date:"d/m/Y" }}</td>
+                <td class="py-2">
+                    {% if inv.is_valid %}<span class="text-green-600">Válida</span>
+                    {% else %}<span class="text-red-500">Expirada</span>{% endif %}
+                </td>
+                <td class="py-2">
+                    <form method="post" action="{% url 'users:invitation_revoke' inv.id %}" class="inline" onsubmit="return confirm('¿Revocar esta invitación?')">
+                        {% csrf_token %}
+                        <button type="submit" class="text-red-600 hover:text-red-800 font-medium">Revocar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endif %}
+
 <div class="bg-white rounded-xl shadow-md overflow-hidden">
     <table class="w-full">
         <thead class="bg-gray-50">
@@ -29,15 +58,44 @@
                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Rol</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Sucursal</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Acciones</th>
             </tr>
         </thead>
         <tbody class="divide-y">
             {% for m in memberships %}
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 font-medium">{{ m.user.get_full_name|default:m.user.username }}</td>
+            <tr class="hover:bg-gray-50 {% if not m.is_active %}opacity-50{% endif %}">
+                <td class="px-6 py-4 font-medium">
+                    {{ m.user.get_full_name|default:m.user.username }}
+                    {% if m.user == user %}<span class="ml-1 text-xs text-blue-500">(tú)</span>{% endif %}
+                </td>
                 <td class="px-6 py-4 text-gray-600">{{ m.user.email }}</td>
-                <td class="px-6 py-4"><span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">{{ m.get_role_display }}</span></td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 {% if m.role == 'admin_central' %}bg-purple-100 text-purple-800{% elif m.role == 'branch_manager' %}bg-blue-100 text-blue-800{% else %}bg-gray-100 text-gray-700{% endif %} rounded-full text-sm">
+                        {{ m.get_role_display }}
+                    </span>
+                </td>
                 <td class="px-6 py-4 text-gray-600">{{ m.branch.name|default:"Todas" }}</td>
+                <td class="px-6 py-4">
+                    {% if m.is_active %}
+                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">Activo</span>
+                    {% else %}
+                        <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">Inactivo</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4">
+                    <div class="flex gap-2 flex-wrap">
+                        {% if m.user != user %}
+                        <a href="{% url 'users:user_edit' m.user.id %}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Editar</a>
+                        <form method="post" action="{% url 'users:user_deactivate' m.user.id %}" class="inline" onsubmit="return confirm('¿Confirmar cambio de estado?')">
+                            {% csrf_token %}
+                            <button type="submit" class="text-sm {% if m.is_active %}text-red-500 hover:text-red-700{% else %}text-green-600 hover:text-green-800{% endif %} font-medium">
+                                {% if m.is_active %}Desactivar{% else %}Activar{% endif %}
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>

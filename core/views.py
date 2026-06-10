@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -9,6 +10,8 @@ from django.conf import settings
 
 from apps.users.forms import OrganizationRegistrationForm, UsernameRecoveryForm
 from apps.users.models import Organization, Membership, Branch
+
+logger = logging.getLogger(__name__)
 
 
 def landing_page(request):
@@ -34,22 +37,53 @@ def dashboard(request):
     context = {}
     if request.organization:
         from apps.inventory.models import Product, Stock
-        from apps.sales.models import Sale
-        from django.db.models import Sum
+        from apps.sales.models import Sale, SaleItem
+        from django.db.models import Sum, Count
         from django.utils import timezone
+        from datetime import timedelta
 
         today = timezone.now().date()
-        context['total_products'] = Product.objects.for_org(request.organization).count()
-        context['low_stock'] = Stock.objects.for_org(request.organization).filter(
-            quantity__lte=5
-        ).count()
+        week_start = today - timedelta(days=today.weekday())
+        month_start = today.replace(day=1)
+
         sales_qs = Sale.objects.for_org(request.organization).filter(status='paid')
         if request.user_role != 'admin_central' and request.branch:
             sales_qs = sales_qs.filter(branch=request.branch)
-        context['sales_today'] = sales_qs.filter(created_at__date=today).count()
-        context['revenue_today'] = sales_qs.filter(
-            created_at__date=today
-        ).aggregate(total=Sum('total'))['total'] or 0
+
+        # KPIs de hoy
+        sales_today_qs = sales_qs.filter(created_at__date=today)
+        context['sales_today'] = sales_today_qs.count()
+        context['revenue_today'] = sales_today_qs.aggregate(total=Sum('total'))['total'] or 0
+
+        # KPIs de la semana
+        sales_week_qs = sales_qs.filter(created_at__date__gte=week_start)
+        context['sales_week'] = sales_week_qs.count()
+        context['revenue_week'] = sales_week_qs.aggregate(total=Sum('total'))['total'] or 0
+
+        # KPIs del mes
+        sales_month_qs = sales_qs.filter(created_at__date__gte=month_start)
+        context['sales_month'] = sales_month_qs.count()
+        context['revenue_month'] = sales_month_qs.aggregate(total=Sum('total'))['total'] or 0
+
+        # Inventario
+        context['total_products'] = Product.objects.for_org(request.organization).count()
+
+        # Stock bajo (≤ min_quantity)
+        low_stock_qs = Stock.objects.for_org(request.organization).filter(
+            quantity__lte=5
+        ).select_related('product', 'branch')
+        context['low_stock'] = low_stock_qs.count()
+        context['low_stock_items'] = low_stock_qs[:5]
+
+        # Top 5 productos del mes
+        context['top_products'] = (
+            SaleItem.objects
+            .filter(sale__in=sales_month_qs)
+            .values('product__name')
+            .annotate(total_qty=Sum('quantity'), total_revenue=Sum('subtotal'))
+            .order_by('-total_qty')[:5]
+        )
+
     return render(request, 'dashboard.html', context)
 
 
@@ -97,6 +131,7 @@ def register(request):
                 messages.success(request, f'¡Bienvenido a ProcessNova! Tu empresa {org.name} ha sido creada.')
                 return redirect('dashboard')
             except Exception as e:
+                logger.exception('Error al crear organización/usuario en registro: %s', e)
                 messages.error(request, "Ocurrió un error al crear tu cuenta. Por favor, intenta nuevamente.")
     else:
         form = OrganizationRegistrationForm()

@@ -1,106 +1,152 @@
 {% extends 'base.html' %}
 {% block title %}POS - ProcessNova{% endblock %}
 {% block content %}
-<div class="h-[calc(100vh-4rem)] -m-8 bg-gray-100">
-    <div class="flex h-full">
-        <div class="w-2/3 p-6 overflow-y-auto">
-            <div class="mb-4 flex justify-between items-start">
+<div class="h-[calc(100vh-4rem)] -m-8 bg-slate-100 text-slate-900">
+    <div class="flex h-full min-h-0">
+        <section class="w-2/3 min-w-0 p-6 overflow-y-auto">
+            <div class="mb-5 flex items-start justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-800">Punto de Venta</h1>
-                    {% if current_branch %}<p class="text-gray-500">📍 {{ current_branch.name }}</p>{% endif %}
-                    <span id="offline-status" class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 mt-1 inline-block">● En línea</span>
-                    <span id="pending-badge" class="hidden text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800 mt-1 inline-block"></span>
+                    <h1 class="text-2xl font-bold tracking-tight">Punto de Venta</h1>
+                    {% if current_branch %}<p class="mt-1 text-sm text-slate-500">{{ current_branch.name }}</p>{% endif %}
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        <span id="offline-status" class="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">En linea</span>
+                        <span id="pending-badge" class="hidden text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-700"></span>
+                        <span id="scan-feedback" class="hidden text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700"></span>
+                    </div>
                 </div>
-                {% if branches %}
-                <select id="branch-select" onchange="switchBranch(this.value)" class="px-4 py-2 border rounded-lg">
-                    {% for b in branches %}
-                    <option value="{{ b.id }}" {% if current_branch.id == b.id %}selected{% endif %}>{{ b.name }}</option>
-                    {% endfor %}
-                </select>
-                {% endif %}
+                <div class="flex flex-wrap items-center justify-end gap-2">
+                    <div class="inline-flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+                        <button id="btn-retail" type="button" onclick="setSaleType('pos')" class="rounded-md px-4 py-2 text-sm font-semibold bg-blue-600 text-white">Menudeo</button>
+                        <button id="btn-wholesale" type="button" onclick="setSaleType('wholesale')" class="rounded-md px-4 py-2 text-sm font-semibold text-slate-600">Mayoreo</button>
+                    </div>
+                    {% if branches %}
+                    <select id="branch-select" onchange="switchBranch(this.value)" class="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-sm">
+                        {% for b in branches %}
+                        <option value="{{ b.id }}" {% if current_branch.id == b.id %}selected{% endif %}>{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                </div>
             </div>
 
-            <div class="flex gap-2 mb-4">
-                <input id="barcode-scan" type="text" placeholder="Escanea código de barras o SKU..."
-                    class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none text-lg" autofocus>
-                <button onclick="scanBarcode()" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold">Buscar</button>
-                <button onclick="toggleCamera()" class="px-4 py-3 bg-gray-700 text-white rounded-xl hover:bg-gray-800 font-semibold" title="Cámara">📷</button>
+            <div class="mb-5 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <div class="grid grid-cols-[1fr_112px_auto_auto] gap-2">
+                    <input id="barcode-scan" type="text" inputmode="text" autocomplete="off" placeholder="Escanea codigo de barras o SKU"
+                        class="h-12 rounded-lg border-2 border-slate-300 px-4 text-lg outline-none transition focus:border-blue-500" autofocus>
+                    <input id="scan-quantity" type="number" min="1" step="1" value="1" class="h-12 rounded-lg border border-slate-300 px-3 text-center text-lg font-semibold outline-none focus:border-blue-500" title="Cantidad">
+                    <button type="button" onclick="scanBarcode()" class="h-12 rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700">Agregar</button>
+                    <button type="button" onclick="toggleCamera()" class="h-12 rounded-lg bg-slate-800 px-4 text-sm font-semibold text-white hover:bg-slate-900" title="Escanear con camara">Camara</button>
+                </div>
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                    <span class="text-slate-500">Cantidad rapida:</span>
+                    <button type="button" onclick="setScanQuantity(1)" class="rounded-md border border-slate-200 px-3 py-1.5 font-semibold hover:bg-slate-50">1</button>
+                    <button type="button" onclick="setScanQuantity(5)" class="rounded-md border border-slate-200 px-3 py-1.5 font-semibold hover:bg-slate-50">5</button>
+                    <button type="button" onclick="setScanQuantity(10)" class="rounded-md border border-slate-200 px-3 py-1.5 font-semibold hover:bg-slate-50">10</button>
+                    <button type="button" onclick="focusScanner()" class="ml-auto rounded-md border border-blue-200 px-3 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">Enfocar lector</button>
+                </div>
+                <div id="camera-reader" class="hidden mt-4 overflow-hidden rounded-lg border border-slate-200"></div>
             </div>
-            <div id="camera-reader" class="hidden mb-4 rounded-xl overflow-hidden max-w-md"></div>
 
             {% if categories %}
-            <div class="flex gap-2 mb-4 flex-wrap">
-                <button onclick="filterProducts(null)" class="px-4 py-2 rounded-full bg-gray-300 font-semibold">Todos</button>
+            <div class="mb-4 flex flex-wrap gap-2">
+                <button type="button" onclick="filterProducts(null, this)" class="category-chip rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Todos</button>
                 {% for cat in categories %}
-                <button onclick="filterProducts({{ cat.id }})" class="px-4 py-2 rounded-full bg-gray-200 hover:bg-blue-600 hover:text-white font-semibold">{{ cat.name }}</button>
+                <button type="button" onclick="filterProducts({{ cat.id }}, this)" class="category-chip rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-blue-50">{{ cat.name }}</button>
                 {% endfor %}
             </div>
             {% endif %}
 
-            <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div id="products-grid" class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
                 {% for product in products %}
-                <div class="bg-white rounded-xl p-4 shadow hover:shadow-lg cursor-pointer transition"
-                    data-category="{% if product.category %}{{ product.category.id }}{% else %}none{% endif %}"
-                    onclick="addProduct({{ product.id }})">
-                    <h3 class="font-bold text-gray-800">{{ product.name }}</h3>
-                    <p class="text-gray-500 text-sm">SKU: {{ product.sku }}</p>
-                    {% if product.barcode %}<p class="text-gray-400 text-xs">{{ product.barcode }}</p>{% endif %}
-                    <p class="text-2xl font-bold text-green-600 mt-2">${{ product.price }}</p>
-                </div>
+                <article class="group rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+                    data-category="{% if product.category %}{{ product.category.id }}{% else %}none{% endif %}">
+                    <button type="button" onclick="addProduct({{ product.id }})" class="block w-full text-left">
+                        <h3 class="line-clamp-2 min-h-[2.5rem] font-bold text-slate-900">{{ product.name }}</h3>
+                        <p class="mt-1 truncate text-xs text-slate-500">SKU: {{ product.sku }}</p>
+                        {% if product.barcode %}<p class="truncate text-xs text-slate-400">{{ product.barcode }}</p>{% endif %}
+                        <p class="mt-3 text-2xl font-bold text-emerald-600">${{ product.price }}</p>
+                    </button>
+                    <div class="mt-3 grid grid-cols-3 gap-1">
+                        <button type="button" onclick="addProduct({{ product.id }}, 1)" class="rounded-md bg-slate-100 py-2 text-sm font-semibold hover:bg-slate-200">+1</button>
+                        <button type="button" onclick="addProduct({{ product.id }}, 5)" class="rounded-md bg-slate-100 py-2 text-sm font-semibold hover:bg-slate-200">+5</button>
+                        <button type="button" onclick="addProduct({{ product.id }}, 10)" class="rounded-md bg-slate-100 py-2 text-sm font-semibold hover:bg-slate-200">+10</button>
+                    </div>
+                </article>
                 {% empty %}
-                <p class="col-span-4 text-gray-500">No hay productos. <a href="{% url 'inventory:product_create' %}" class="text-blue-600">Crear uno</a></p>
+                <p class="col-span-4 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-slate-500">No hay productos. <a href="{% url 'inventory:product_create' %}" class="font-semibold text-blue-600">Crear uno</a></p>
                 {% endfor %}
             </div>
-        </div>
+        </section>
 
-        <div class="w-1/3 bg-white border-l flex flex-col">
-            <div class="p-4 border-b"><h2 class="text-xl font-bold">Venta Actual</h2></div>
-            <div class="flex-1 overflow-y-auto p-4" id="cart-items"></div>
-            <div class="p-4 border-t bg-gray-50">
-                <div class="flex justify-between text-2xl font-bold mb-2">
-                    <span>Total:</span><span id="cart-total" class="text-green-600">$0.00</span>
+        <aside class="flex w-1/3 min-w-[360px] flex-col border-l border-slate-200 bg-white">
+            <div class="border-b border-slate-200 p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-lg font-bold">Venta actual</h2>
+                    <button type="button" onclick="clearCart()" class="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100">Limpiar</button>
                 </div>
-                <div id="change-display" class="hidden text-lg text-blue-600 mb-4">Cambio: $<span id="change-amount">0.00</span></div>
-                <div class="mb-3">
-                    <label class="block text-gray-700 mb-1">Método de Pago</label>
-                    <select id="payment-method" class="w-full px-4 py-2 border rounded-lg">
-                        <option value="cash">Efectivo</option>
-                        <option value="card">Tarjeta</option>
-                        <option value="transfer">Transferencia</option>
+                <div class="mt-3">
+                    <label class="mb-1 block text-sm font-medium text-slate-600">Cliente</label>
+                    <select id="customer-select" class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-blue-500">
+                        <option value="">Cliente general</option>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-1">Monto Recibido</label>
-                    <input id="amount-paid" type="number" step="0.01" value="0" class="w-full px-4 py-2 border rounded-lg text-xl"
-                        oninput="updateChange()">
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="clearCart()" class="flex-1 px-4 py-3 bg-red-100 text-red-700 rounded-xl font-semibold">Limpiar</button>
-                    <button onclick="checkout()" id="checkout-btn" class="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold">Pagar</button>
-                </div>
             </div>
-        </div>
+
+            <div class="min-h-0 flex-1 overflow-y-auto p-4" id="cart-items"></div>
+
+            <div class="border-t border-slate-200 bg-slate-50 p-4">
+                <div class="space-y-1 text-sm">
+                    <div class="flex justify-between text-slate-500"><span>Subtotal</span><span id="cart-subtotal">$0.00</span></div>
+                    <div class="flex justify-between text-slate-500"><span>Impuestos</span><span id="cart-tax">$0.00</span></div>
+                    <div class="flex justify-between text-2xl font-bold"><span>Total</span><span id="cart-total" class="text-emerald-600">$0.00</span></div>
+                    <div id="change-display" class="hidden rounded-lg bg-blue-50 px-3 py-2 text-blue-700">Cambio: $<span id="change-amount">0.00</span></div>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-600">Metodo de pago</label>
+                        <select id="payment-method" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 outline-none focus:border-blue-500">
+                            <option value="cash">Efectivo</option>
+                            <option value="card_debit">Tarjeta debito</option>
+                            <option value="card_credit">Tarjeta credito</option>
+                            <option value="transfer">Transferencia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-600">Monto recibido</label>
+                        <input id="amount-paid" type="number" step="0.01" min="0" value="0" class="h-11 w-full rounded-lg border border-slate-300 px-3 text-right text-lg font-semibold outline-none focus:border-blue-500" oninput="updateChange()">
+                    </div>
+                </div>
+                <div class="mt-3 grid grid-cols-3 gap-2">
+                    <button type="button" onclick="fillPaidAmount()" class="rounded-lg border border-slate-200 bg-white py-2 text-sm font-semibold hover:bg-slate-100">Exacto</button>
+                    <button type="button" onclick="addPaidAmount(100)" class="rounded-lg border border-slate-200 bg-white py-2 text-sm font-semibold hover:bg-slate-100">+$100</button>
+                    <button type="button" onclick="addPaidAmount(500)" class="rounded-lg border border-slate-200 bg-white py-2 text-sm font-semibold hover:bg-slate-100">+$500</button>
+                </div>
+                <button type="button" onclick="checkout()" id="checkout-btn" class="mt-4 h-12 w-full rounded-lg bg-emerald-600 text-base font-bold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300">Pagar venta</button>
+            </div>
+        </aside>
     </div>
 </div>
 
-<!-- Modal producto no encontrado -->
-<div id="quick-create-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-        <h3 class="text-xl font-bold mb-4">Producto no encontrado</h3>
-        <p class="text-gray-600 mb-4">Código: <strong id="modal-barcode"></strong></p>
+<div id="quick-create-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+        <h3 class="text-xl font-bold">Producto no encontrado</h3>
+        <p class="mt-2 text-sm text-slate-600">Codigo: <strong id="modal-barcode"></strong></p>
         {% if can_create_products %}
-        <div class="space-y-3">
-            <input id="qc-name" type="text" placeholder="Nombre del producto" class="w-full px-4 py-2 border rounded-lg">
-            <input id="qc-price" type="number" step="0.01" placeholder="Precio" class="w-full px-4 py-2 border rounded-lg">
-            <input id="qc-quantity" type="number" value="1" min="1" placeholder="Cantidad" class="w-full px-4 py-2 border rounded-lg">
-            <div class="flex gap-2">
-                <button onclick="closeQuickCreate()" class="flex-1 px-4 py-2 bg-gray-200 rounded-lg">Cancelar</button>
-                <button onclick="quickCreateAndAdd()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg">Crear y agregar</button>
+        <div class="mt-4 space-y-3">
+            <input id="qc-name" type="text" placeholder="Nombre del producto" class="w-full rounded-lg border border-slate-300 px-4 py-2 outline-none focus:border-blue-500">
+            <input id="qc-price" type="number" step="0.01" min="0" placeholder="Precio" class="w-full rounded-lg border border-slate-300 px-4 py-2 outline-none focus:border-blue-500">
+            <input id="qc-quantity" type="number" value="1" min="1" placeholder="Cantidad inicial" class="w-full rounded-lg border border-slate-300 px-4 py-2 outline-none focus:border-blue-500">
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button type="button" onclick="closeQuickCreate()" class="rounded-lg bg-slate-100 px-4 py-2 font-semibold hover:bg-slate-200">Cancelar</button>
+                <button type="button" onclick="quickCreateAndAdd()" class="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700">Crear y agregar</button>
             </div>
         </div>
         {% else %}
-        <p class="text-red-600">Contacta a tu encargado para registrar este producto.</p>
-        <button onclick="closeQuickCreate()" class="mt-4 px-4 py-2 bg-gray-200 rounded-lg">Cerrar</button>
+        <p class="mt-4 text-red-600">Contacta a tu encargado para registrar este producto.</p>
+        <button type="button" onclick="closeQuickCreate()" class="mt-4 rounded-lg bg-slate-100 px-4 py-2 font-semibold">Cerrar</button>
         {% endif %}
     </div>
 </div>
@@ -110,134 +156,227 @@
 <script>
 const csrfToken = '{{ csrf_token }}';
 let cartItems = [];
+let cartTotals = { subtotal: 0, tax: 0, total: 0 };
 let offlineCart = [];
 let scanner = null;
 let pendingBarcode = '';
 let cachedProducts = [];
+let currentSaleType = 'pos';
+let lastScan = { code: '', at: 0 };
 
 document.addEventListener('DOMContentLoaded', async () => {
     PosOffline.updateOnlineStatus();
-    window.addEventListener('online', async () => {
-        PosOffline.updateOnlineStatus();
-        const data = await PosOffline.syncPendingSales(csrfToken);
-        if (data.results) {
-            const synced = data.results.filter(r => r.success).length;
-            if (synced > 0) alert(`${synced} venta(s) offline sincronizada(s)`);
-        }
-        updatePendingBadge();
-        await PosOffline.fetchAndCacheProducts(csrfToken);
-    });
+    window.addEventListener('online', handleOnline);
     window.addEventListener('offline', PosOffline.updateOnlineStatus);
-    try {
-        if (navigator.onLine) {
-            cachedProducts = await PosOffline.fetchAndCacheProducts(csrfToken);
-        } else {
-            cachedProducts = await PosOffline.getCachedProducts();
-        }
-    } catch (e) { cachedProducts = await PosOffline.getCachedProducts(); }
+    await refreshProductCache();
     updatePendingBadge();
-    if (navigator.onLine) loadCart();
-    else renderOfflineCart();
-    document.getElementById('barcode-scan').addEventListener('keypress', e => { if (e.key === 'Enter') scanBarcode(); });
+    if (navigator.onLine) loadCart(); else renderOfflineCart();
+    const scannerInput = document.getElementById('barcode-scan');
+    scannerInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            scanBarcode();
+        }
+    });
+    scannerInput.addEventListener('input', () => {
+        clearScanFeedback();
+    });
+    focusScanner();
 });
 
-async function updatePendingBadge() {
-    const pending = await PosOffline.getPendingSales();
-    const badge = document.getElementById('pending-badge');
-    if (pending.length) {
-        badge.textContent = `${pending.length} venta(s) pendiente(s)`;
-        badge.classList.remove('hidden');
-    } else {
-        badge.classList.add('hidden');
+async function handleOnline() {
+    PosOffline.updateOnlineStatus();
+    const data = await PosOffline.syncPendingSales(csrfToken);
+    if (data.results) {
+        const synced = data.results.filter((r) => r.success).length;
+        if (synced > 0) showScanFeedback(`${synced} venta(s) sincronizada(s)`, 'ok');
+    }
+    await refreshProductCache();
+    updatePendingBadge();
+}
+
+async function refreshProductCache() {
+    try {
+        cachedProducts = navigator.onLine
+            ? await PosOffline.fetchAndCacheProducts(csrfToken)
+            : await PosOffline.getCachedProducts();
+    } catch (error) {
+        cachedProducts = await PosOffline.getCachedProducts();
     }
 }
 
-function renderOfflineCart() {
-    cartItems = offlineCart;
-    const total = offlineCart.reduce((s, i) => s + i.subtotal, 0);
-    document.getElementById('cart-total').textContent = '$' + total.toFixed(2);
-    const container = document.getElementById('cart-items');
-    container.innerHTML = '';
-    offlineCart.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = 'flex justify-between items-center mb-2 p-2 bg-gray-50 rounded-lg';
-        div.innerHTML = `<div class="flex-1"><div class="font-semibold">${item.product_name}</div><div class="text-sm text-gray-500">${item.quantity} x $${item.unit_price.toFixed(2)}</div></div><div class="flex items-center gap-2"><span class="font-semibold">$${item.subtotal.toFixed(2)}</span><button onclick="removeOfflineItem(${idx})" class="text-red-500">✕</button></div>`;
-        container.appendChild(div);
-    });
-    updateChange();
+function normalizeCode(value) {
+    return String(value || '').trim().toLowerCase();
 }
 
-function removeOfflineItem(idx) {
-    offlineCart.splice(idx, 1);
-    renderOfflineCart();
+function getScanQuantity() {
+    const value = parseInt(document.getElementById('scan-quantity').value, 10);
+    return Number.isFinite(value) && value > 0 ? value : 1;
+}
+
+function setScanQuantity(quantity) {
+    document.getElementById('scan-quantity').value = quantity;
+    focusScanner();
+}
+
+function findCachedProductByCode(code) {
+    const normalized = normalizeCode(code);
+    return cachedProducts.find((product) =>
+        normalizeCode(product.barcode) === normalized || normalizeCode(product.sku) === normalized
+    );
+}
+
+function focusScanner() {
+    const input = document.getElementById('barcode-scan');
+    input.focus();
+    input.select();
+}
+
+function showScanFeedback(message, type = 'info') {
+    const el = document.getElementById('scan-feedback');
+    el.textContent = message;
+    el.className = 'text-xs px-2.5 py-1 rounded-full ' + (
+        type === 'ok' ? 'bg-emerald-100 text-emerald-700' :
+        type === 'error' ? 'bg-red-100 text-red-700' :
+        'bg-blue-100 text-blue-700'
+    );
+}
+
+function clearScanFeedback() {
+    const el = document.getElementById('scan-feedback');
+    el.classList.add('hidden');
+}
+
+function money(value) {
+    return '$' + (Number(value) || 0).toFixed(2);
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    }[char]));
 }
 
 async function toggleCamera() {
     const reader = document.getElementById('camera-reader');
     if (scanner) {
-        await scanner.stop(); scanner = null;
+        await scanner.stop();
+        scanner = null;
         reader.classList.add('hidden');
+        focusScanner();
         return;
     }
     reader.classList.remove('hidden');
     scanner = new Html5Qrcode('camera-reader');
     await scanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 280, height: 140 } },
-        (text) => {
+        { fps: 30, qrbox: { width: 420, height: 220 }, aspectRatio: 1.777 },
+        async (text) => {
             document.getElementById('barcode-scan').value = text;
-            scanner.stop(); scanner = null;
+            await scanner.stop();
+            scanner = null;
             reader.classList.add('hidden');
             scanBarcode();
         }
     );
 }
 
-function scanBarcode() {
-    const barcode = document.getElementById('barcode-scan').value.trim();
+async function scanBarcode() {
+    const input = document.getElementById('barcode-scan');
+    const barcode = input.value.trim();
+    const quantity = getScanQuantity();
     if (!barcode) return;
-    if (!navigator.onLine) {
-        const product = cachedProducts.find(p => p.barcode === barcode || p.sku === barcode);
-        if (product) addProductOffline(product);
-        else alert('Producto no encontrado en caché offline');
-        document.getElementById('barcode-scan').value = '';
+
+    const now = Date.now();
+    if (lastScan.code === barcode && now - lastScan.at < 450) return;
+    lastScan = { code: barcode, at: now };
+
+    const cached = findCachedProductByCode(barcode);
+    if (cached) {
+        await addProduct(cached.id, quantity);
+        input.value = '';
+        showScanFeedback(`${cached.name} agregado x${quantity}`, 'ok');
+        focusScanner();
         return;
     }
+
+    if (!navigator.onLine) {
+        showScanFeedback('Producto no encontrado en cache offline', 'error');
+        input.value = '';
+        focusScanner();
+        return;
+    }
+
     fetch('/sales/api/scan-product/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
         body: JSON.stringify({ barcode })
-    }).then(r => r.json()).then(data => {
-        if (data.product) addProduct(data.product.id);
-        else {
+    }).then((response) => response.json()).then(async (data) => {
+        if (data.product) {
+            await addProduct(data.product.id, quantity);
+            showScanFeedback(`${data.product.name} agregado x${quantity}`, 'ok');
+        } else {
             pendingBarcode = barcode;
             document.getElementById('modal-barcode').textContent = barcode;
             document.getElementById('quick-create-modal').classList.remove('hidden');
+            document.getElementById('qc-name')?.focus();
         }
+        input.value = '';
+        focusScanner();
+    }).catch(() => {
+        showScanFeedback('No se pudo consultar el codigo', 'error');
+        focusScanner();
     });
-    document.getElementById('barcode-scan').value = '';
 }
 
-function addProductOffline(product) {
-    const existing = offlineCart.find(i => i.product_id === product.id);
+function renderOfflineCart() {
+    cartItems = offlineCart;
+    const total = offlineCart.reduce((sum, item) => sum + Number(item.subtotal), 0);
+    cartTotals = { subtotal: total, tax: 0, total };
+    renderCartItems(offlineCart, true);
+    renderTotals();
+}
+
+function addProductOffline(product, quantity = 1) {
+    const unitPrice = currentSaleType === 'wholesale'
+        ? Number(product.price) * 0.9
+        : Number(product.price);
+    const existing = offlineCart.find((item) => item.product_id === product.id);
     if (existing) {
-        existing.quantity++;
+        existing.quantity += quantity;
+        existing.unit_price = unitPrice;
         existing.subtotal = existing.quantity * existing.unit_price;
     } else {
         offlineCart.push({
             product_id: product.id,
             product_name: product.name,
-            quantity: 1,
-            unit_price: product.price,
-            subtotal: product.price,
+            quantity,
+            unit_price: unitPrice,
+            subtotal: quantity * unitPrice,
         });
     }
+    renderOfflineCart();
+}
+
+function updateOfflineQuantity(index, delta) {
+    offlineCart[index].quantity += delta;
+    if (offlineCart[index].quantity <= 0) {
+        offlineCart.splice(index, 1);
+    } else {
+        offlineCart[index].subtotal = offlineCart[index].quantity * offlineCart[index].unit_price;
+    }
+    renderOfflineCart();
+}
+
+function removeOfflineItem(index) {
+    offlineCart.splice(index, 1);
     renderOfflineCart();
 }
 
 function closeQuickCreate() {
     document.getElementById('quick-create-modal').classList.add('hidden');
     pendingBarcode = '';
+    focusScanner();
 }
 
 function quickCreateAndAdd() {
@@ -251,29 +390,47 @@ function quickCreateAndAdd() {
             quantity: document.getElementById('qc-quantity').value,
             sku: pendingBarcode,
         })
-    }).then(r => r.json()).then(data => {
+    }).then((response) => response.json()).then(async (data) => {
         if (data.product) {
             closeQuickCreate();
-            addProduct(data.product.id);
-            location.reload();
+            await refreshProductCache();
+            await addProduct(data.product.id, getScanQuantity());
+            showScanFeedback(`${data.product.name} creado y agregado`, 'ok');
         } else {
-            alert(data.error || 'Error al crear producto');
+            showScanFeedback(data.error || 'Error al crear producto', 'error');
         }
     });
 }
 
-function addProduct(productId) {
+async function addProduct(productId, quantity = getScanQuantity()) {
+    quantity = Math.max(1, parseInt(quantity, 10) || 1);
     if (!navigator.onLine) {
-        const product = cachedProducts.find(p => p.id === productId);
-        if (product) addProductOffline(product);
+        const product = cachedProducts.find((item) => item.id === productId);
+        if (product) addProductOffline(product, quantity);
         return;
     }
-    fetch('/sales/api/add-to-cart/', {
+    const response = await fetch('/sales/api/add-to-cart/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-        body: JSON.stringify({ product_id: productId, quantity: 1 })
-    }).then(r => r.json()).then(data => {
-        if (data.error) alert(data.error);
+        body: JSON.stringify({ product_id: productId, quantity, sale_type: currentSaleType })
+    });
+    const data = await response.json();
+    if (data.error) {
+        showScanFeedback(data.error, 'error');
+    } else if (data.cart) {
+        applyCartData(data.cart);
+    } else {
+        await loadCart();
+    }
+}
+
+function updateItemQuantity(itemId, delta) {
+    fetch('/sales/api/update-item-quantity/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ item_id: itemId, delta })
+    }).then((response) => response.json()).then((data) => {
+        if (data.error) showScanFeedback(data.error, 'error');
         else loadCart();
     });
 }
@@ -288,27 +445,70 @@ function removeItem(itemId) {
 
 function loadCart() {
     fetch('/sales/api/get-cart/', {
-        method: 'POST',
+        method: 'GET',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-    }).then(r => r.json()).then(data => {
-        cartItems = data.items;
-        document.getElementById('cart-total').textContent = '$' + parseFloat(data.total).toFixed(2);
-        const container = document.getElementById('cart-items');
-        container.innerHTML = '';
-        data.items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'flex justify-between items-center mb-2 p-2 bg-gray-50 rounded-lg';
-            div.innerHTML = `<div class="flex-1"><div class="font-semibold">${item.product_name}</div><div class="text-sm text-gray-500">${item.quantity} x $${parseFloat(item.unit_price).toFixed(2)}</div></div><div class="flex items-center gap-2"><span class="font-semibold">$${parseFloat(item.subtotal).toFixed(2)}</span><button onclick="removeItem(${item.id})" class="text-red-500">✕</button></div>`;
-            container.appendChild(div);
-        });
-        updateChange();
+    }).then((response) => response.json()).then(applyCartData);
+}
+
+function applyCartData(data) {
+    cartItems = data.items || [];
+    cartTotals = {
+        subtotal: Number(data.subtotal || 0),
+        tax: Number(data.tax || 0),
+        total: Number(data.total || 0),
+    };
+    renderCartItems(cartItems, false);
+    renderTotals();
+}
+
+function renderCartItems(items, offline) {
+    const container = document.getElementById('cart-items');
+    container.innerHTML = '';
+    if (!items.length) {
+        container.innerHTML = '<div class="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-300 text-sm text-slate-500">La venta esta vacia</div>';
+        return;
+    }
+    items.forEach((item, index) => {
+        const minus = offline ? `updateOfflineQuantity(${index}, -1)` : `updateItemQuantity(${item.id}, -1)`;
+        const plusOne = offline ? `updateOfflineQuantity(${index}, 1)` : `updateItemQuantity(${item.id}, 1)`;
+        const plusFive = offline ? `updateOfflineQuantity(${index}, 5)` : `updateItemQuantity(${item.id}, 5)`;
+        const plusTen = offline ? `updateOfflineQuantity(${index}, 10)` : `updateItemQuantity(${item.id}, 10)`;
+        const remove = offline ? `removeOfflineItem(${index})` : `removeItem(${item.id})`;
+        const div = document.createElement('div');
+        div.className = 'mb-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm';
+        div.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <div class="truncate font-semibold">${escapeHtml(item.product_name)}</div>
+                    <div class="text-sm text-slate-500">${item.quantity} x ${money(item.unit_price)}</div>
+                </div>
+                <button type="button" onclick="${remove}" class="rounded-md px-2 py-1 text-red-600 hover:bg-red-50">Quitar</button>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-2">
+                <div class="grid grid-cols-4 gap-1">
+                    <button type="button" onclick="${minus}" class="h-8 rounded-md bg-slate-100 font-bold hover:bg-slate-200">-</button>
+                    <button type="button" onclick="${plusOne}" class="h-8 rounded-md bg-slate-100 text-sm font-semibold hover:bg-slate-200">+1</button>
+                    <button type="button" onclick="${plusFive}" class="h-8 rounded-md bg-slate-100 text-sm font-semibold hover:bg-slate-200">+5</button>
+                    <button type="button" onclick="${plusTen}" class="h-8 rounded-md bg-slate-100 text-sm font-semibold hover:bg-slate-200">+10</button>
+                </div>
+                <div class="text-right font-bold">${money(item.subtotal)}</div>
+            </div>
+        `;
+        container.appendChild(div);
     });
 }
 
+function renderTotals() {
+    document.getElementById('cart-subtotal').textContent = money(cartTotals.subtotal);
+    document.getElementById('cart-tax').textContent = money(cartTotals.tax);
+    document.getElementById('cart-total').textContent = money(cartTotals.total);
+    document.getElementById('checkout-btn').disabled = cartItems.length === 0;
+    updateChange();
+}
+
 function updateChange() {
-    const total = cartItems.reduce((s, i) => s + i.subtotal, 0);
     const paid = parseFloat(document.getElementById('amount-paid').value) || 0;
-    const change = paid - total;
+    const change = paid - cartTotals.total;
     if (paid > 0 && change >= 0) {
         document.getElementById('change-display').classList.remove('hidden');
         document.getElementById('change-amount').textContent = change.toFixed(2);
@@ -317,66 +517,198 @@ function updateChange() {
     }
 }
 
-function clearCart() {
-    if (confirm('¿Limpiar la venta?')) {
-        fetch('/sales/api/clear-cart/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-        }).then(() => loadCart());
+function fillPaidAmount() {
+    document.getElementById('amount-paid').value = cartTotals.total.toFixed(2);
+    updateChange();
+}
+
+function addPaidAmount(amount) {
+    const input = document.getElementById('amount-paid');
+    input.value = ((parseFloat(input.value) || 0) + amount).toFixed(2);
+    updateChange();
+}
+
+function clearCart(skipConfirm = false) {
+    if (!skipConfirm && !confirm('Limpiar la venta actual?')) return;
+    if (!navigator.onLine) {
+        offlineCart = [];
+        renderOfflineCart();
+        resetPaymentForm();
+        focusScanner();
+        return;
     }
+    fetch('/sales/api/clear-cart/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+    }).then(() => {
+        applyCartData({ items: [], subtotal: 0, tax: 0, total: 0 });
+        resetPaymentForm();
+        focusScanner();
+    });
 }
 
 async function checkout() {
+    const button = document.getElementById('checkout-btn');
     const paymentMethod = document.getElementById('payment-method').value;
     let amountPaid = parseFloat(document.getElementById('amount-paid').value) || 0;
+    const customerId = document.getElementById('customer-select').value;
     const items = navigator.onLine ? cartItems : offlineCart;
-    const total = items.reduce((s, i) => s + i.subtotal, 0);
-    if (!items.length) { alert('No hay productos en la venta'); return; }
-    if (amountPaid <= 0) amountPaid = total;
-
-    if (!navigator.onLine) {
-        await PosOffline.queueOfflineSale({
-            items: offlineCart.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
-            payment_method: paymentMethod,
-            amount_paid: amountPaid,
-            change: Math.max(0, amountPaid - total),
-        });
-        offlineCart = [];
-        renderOfflineCart();
-        updatePendingBadge();
-        alert('Venta guardada offline. Se sincronizará al recuperar conexión.');
-        document.getElementById('amount-paid').value = '0';
+    if (!items.length) {
+        showScanFeedback('No hay productos en la venta', 'error');
         return;
     }
+    if (amountPaid <= 0) amountPaid = cartTotals.total;
 
-    fetch('/sales/api/checkout/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-        body: JSON.stringify({ payment_method: paymentMethod, amount_paid: amountPaid })
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            alert(`¡Venta #${data.sale_id} completada! Total: $${data.total.toFixed(2)}${data.change > 0 ? ' | Cambio: $' + data.change.toFixed(2) : ''}`);
-            loadCart();
-            document.getElementById('amount-paid').value = '0';
-            document.getElementById('change-display').classList.add('hidden');
-        } else {
-            alert(data.error || 'Error al procesar la venta');
+    button.disabled = true;
+    button.textContent = 'Procesando...';
+    try {
+        if (!navigator.onLine) {
+            await PosOffline.queueOfflineSale({
+                items: offlineCart.map((item) => ({ product_id: item.product_id, quantity: item.quantity })),
+                payment_method: paymentMethod,
+                amount_paid: amountPaid,
+                change: Math.max(0, amountPaid - cartTotals.total),
+                sale_type: currentSaleType,
+            });
+            offlineCart = [];
+            renderOfflineCart();
+            resetPaymentForm();
+            updatePendingBadge();
+            showScanFeedback('Venta guardada offline', 'ok');
+            return;
         }
-    });
+
+        const response = await fetch('/sales/api/checkout/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({
+                payment_method: paymentMethod,
+                amount_paid: amountPaid,
+                sale_type: currentSaleType,
+                customer_id: customerId
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            const receiptItems = cartItems.slice();
+            resetSaleState();
+            printReceipt(data, receiptItems);
+            showScanFeedback(`Venta ${data.sale_number || '#' + data.sale_id} completada`, 'ok');
+            await refreshProductCache();
+        } else {
+            showScanFeedback(data.error || 'Error al procesar la venta', 'error');
+        }
+    } finally {
+        button.textContent = 'Pagar venta';
+        button.disabled = cartItems.length === 0;
+        focusScanner();
+    }
 }
 
-function filterProducts(categoryId) {
-    document.querySelectorAll('#products-grid [data-category]').forEach(el => {
-        el.style.display = (categoryId === null || el.getAttribute('data-category') === String(categoryId)) ? 'block' : 'none';
+function resetPaymentForm() {
+    document.getElementById('amount-paid').value = '0';
+    document.getElementById('customer-select').value = '';
+    document.getElementById('change-display').classList.add('hidden');
+}
+
+function resetSaleState() {
+    applyCartData({ items: [], subtotal: 0, tax: 0, total: 0 });
+    resetPaymentForm();
+}
+
+function printReceipt(data, items) {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    const rows = items.map((item) => `
+        <div class="row">
+            <span>${escapeHtml(item.product_name)} x${item.quantity}</span>
+            <span>${money(item.subtotal)}</span>
+        </div>
+    `).join('');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Ticket ${data.sale_number || data.sale_id}</title>
+                <style>
+                    body { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; padding: 16px; }
+                    .receipt { max-width: 320px; margin: 0 auto; }
+                    .center { text-align: center; }
+                    .row { display: flex; justify-content: space-between; gap: 12px; margin: 4px 0; }
+                    .total { font-size: 1.15em; font-weight: 700; border-top: 1px solid #111; margin-top: 10px; padding-top: 8px; }
+                </style>
+            </head>
+            <body>
+                <div class="receipt">
+                    <div class="center">
+                        <h2>ProcessNova</h2>
+                        <p>Ticket ${data.sale_number || data.sale_id}</p>
+                        <p>${new Date().toLocaleString()}</p>
+                    </div>
+                    <hr>
+                    ${rows}
+                    <div class="row total"><span>Total</span><span>${money(data.total)}</span></div>
+                    <div class="row"><span>Pagado</span><span>${money(data.amount_paid)}</span></div>
+                    <div class="row"><span>Cambio</span><span>${money(data.change)}</span></div>
+                    <hr>
+                    <p class="center">Gracias por su compra</p>
+                </div>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+}
+
+function filterProducts(categoryId, button) {
+    document.querySelectorAll('#products-grid [data-category]').forEach((element) => {
+        element.style.display = (categoryId === null || element.getAttribute('data-category') === String(categoryId)) ? 'block' : 'none';
     });
+    document.querySelectorAll('.category-chip').forEach((chip) => {
+        chip.className = 'category-chip rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-blue-50';
+    });
+    if (button) {
+        button.className = 'category-chip rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white';
+    }
 }
 
 function switchBranch(branchId) {
     fetch('/sales/api/switch-branch/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-        body: JSON.stringify({ branch_id: parseInt(branchId) })
+        body: JSON.stringify({ branch_id: parseInt(branchId, 10) })
     }).then(() => location.reload());
+}
+
+function setSaleType(type) {
+    currentSaleType = type;
+    const retail = document.getElementById('btn-retail');
+    const wholesale = document.getElementById('btn-wholesale');
+    const active = ['bg-blue-600', 'text-white'];
+    const inactive = ['text-slate-600'];
+    retail.classList.remove(...active, ...inactive);
+    wholesale.classList.remove(...active, ...inactive);
+    if (type === 'pos') {
+        retail.classList.add(...active);
+        wholesale.classList.add(...inactive);
+        showScanFeedback('Modo menudeo activo', 'info');
+    } else {
+        wholesale.classList.add(...active);
+        retail.classList.add(...inactive);
+        showScanFeedback('Modo mayoreo activo: descuento aplicado al agregar', 'info');
+    }
+    focusScanner();
+}
+
+async function updatePendingBadge() {
+    const pending = await PosOffline.getPendingSales();
+    const badge = document.getElementById('pending-badge');
+    if (pending.length) {
+        badge.textContent = `${pending.length} venta(s) pendiente(s)`;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
 }
 </script>
 {% endblock %}

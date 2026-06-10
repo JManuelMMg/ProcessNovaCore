@@ -17,15 +17,18 @@
         </div>
         {% if branch.address %}<p class="text-gray-600 text-sm">{{ branch.address }}</p>{% endif %}
         <p class="text-gray-500 text-sm mt-2">CP: {{ branch.codigo_postal|default:"—" }}</p>
-        {% if current_branch.id != branch.id %}
-        <form method="post" action="{% url 'users:branch_switch' %}" class="mt-4">
-            {% csrf_token %}
-            <input type="hidden" name="branch_id" value="{{ branch.id }}">
-            <button type="submit" class="text-sm text-blue-600 hover:text-blue-900">Activar sucursal</button>
-        </form>
-        {% else %}
-        <p class="mt-4 text-sm text-blue-600 font-medium">✓ Sucursal activa</p>
-        {% endif %}
+        <div class="mt-4 flex gap-4 items-center border-t pt-4">
+            {% if current_branch.id != branch.id %}
+            <form method="post" action="{% url 'users:branch_switch' %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="branch_id" value="{{ branch.id }}">
+                <button type="submit" class="text-sm text-blue-600 hover:text-blue-900 font-semibold">Activar sucursal</button>
+            </form>
+            {% else %}
+            <span class="text-sm text-blue-600 font-semibold">✓ Sucursal activa</span>
+            {% endif %}
+            <a href="{% url 'users:branch_edit' branch.id %}" class="text-sm text-gray-600 hover:text-gray-900 font-semibold">Editar</a>
+        </div>
     </div>
     {% empty %}
     <p class="text-gray-500 col-span-3">No hay sucursales registradas.</p>

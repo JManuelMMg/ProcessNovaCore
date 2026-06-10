@@ -127,11 +127,14 @@ def product_create(request):
                 )
                 stock.quantity += initial_stock
                 stock.save()
+                qty_before = stock.quantity - initial_stock  # ya se sumó arriba
                 StockMovement.objects.create(
                     product=product,
                     stock=stock,
                     type='in',
                     quantity=initial_stock,
+                    quantity_before=qty_before,
+                    quantity_after=stock.quantity,
                     reference='Alta de producto',
                     organization=request.organization,
                     created_by=request.user,
@@ -144,6 +147,31 @@ def product_create(request):
     return render(request, 'inventory/product_form.html', {
         'form': form,
         'categories': categories,
+    })
+
+
+@login_required
+@tenant_required
+@permission_required('inventory_edit')
+def product_edit(request, pk):
+    """Editar un producto existente."""
+    product = get_object_or_404(_products_qs(request), pk=pk)
+    if request.method == 'POST':
+        form = ProductForm(request.POST, instance=product, organization=request.organization)
+        if form.is_valid():
+            p = form.save(commit=False)
+            p.category = _resolve_category(form, request.organization)
+            p.save()
+            messages.success(request, f'Producto "{p.name}" actualizado.')
+            return redirect('inventory:product_detail', pk=p.pk)
+    else:
+        form = ProductForm(instance=product, organization=request.organization)
+    categories = Category.objects.for_org(request.organization)
+    return render(request, 'inventory/product_form.html', {
+        'form': form,
+        'product': product,
+        'categories': categories,
+        'editing': True,
     })
 
 
@@ -220,11 +248,14 @@ def api_quick_create(request):
         )
         stock.quantity += quantity
         stock.save()
+        qty_before = stock.quantity - quantity
         StockMovement.objects.create(
             product=product,
             stock=stock,
             type='in',
             quantity=quantity,
+            quantity_before=qty_before,
+            quantity_after=stock.quantity,
             reference='Alta rápida por escaneo',
             organization=request.organization,
             created_by=request.user,
@@ -267,11 +298,14 @@ def api_add_stock(request):
     )
     stock.quantity += quantity
     stock.save()
+    qty_before = stock.quantity - quantity  # ya se sumó arriba
     StockMovement.objects.create(
         product=product,
         stock=stock,
         type='in',
         quantity=quantity,
+        quantity_before=qty_before,
+        quantity_after=stock.quantity,
         reference='Entrada por escaneo',
         organization=request.organization,
         created_by=request.user,

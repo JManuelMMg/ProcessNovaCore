@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, include
 from core import views
+from apps.users import views as user_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,6 +26,13 @@ urlpatterns = [
     path('manifest.json', views.serve_manifest, name='manifest'),
     path('', views.landing_page, name='landing'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('profile/', user_views.user_profile, name='user_profile'),
+    path('password-change/', 
+         auth_views.PasswordChangeView.as_view(
+             template_name='registration/password_change_form.html',
+             success_url='/profile/'
+         ), 
+         name='password_change'),
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', views.register, name='register'),

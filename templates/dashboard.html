@@ -3,48 +3,146 @@
 {% block content %}
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-800 mb-2">¡Bienvenido, {{ user.get_full_name|default:user.username }}!</h1>
-    <p class="text-gray-600">Panel de control{% if current_branch %} — {{ current_branch.name }}{% endif %}</p>
+    <p class="text-gray-600">Panel de control de {{ current_organization.name }} {% if current_branch %} — Sucursal: {{ current_branch.name }}{% endif %}</p>
 </div>
+
+<!-- Grid de KPIs principales -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <a href="{% url 'inventory:product_list' %}" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
-        <p class="text-gray-500 text-sm font-medium">Productos</p>
-        <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_products|default:0 }}</p>
-    </a>
-    <a href="{% url 'inventory:stock_list' %}" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
-        <p class="text-gray-500 text-sm font-medium">Stock Bajo</p>
-        <p class="text-3xl font-bold {% if low_stock %}text-red-600{% else %}text-gray-800{% endif %} mt-2">{{ low_stock|default:0 }}</p>
-    </a>
-    <a href="{% url 'sales:sale_list' %}" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
-        <p class="text-gray-500 text-sm font-medium">Ventas Hoy</p>
-        <p class="text-3xl font-bold text-gray-800 mt-2">{{ sales_today|default:0 }}</p>
-    </a>
-    <div class="bg-white rounded-xl shadow-md p-6">
-        <p class="text-gray-500 text-sm font-medium">Ingresos Hoy</p>
-        <p class="text-3xl font-bold text-green-600 mt-2">${{ revenue_today|default:0|floatformat:2 }}</p>
-    </div>
-</div>
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-white rounded-xl shadow-md p-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">Acciones Rápidas</h2>
-        <div class="space-y-3">
-            {% if can.pos %}
-            <a href="{% url 'sales:pos' %}" class="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition">
-                <span class="font-medium text-gray-800">Abrir Punto de Venta</span>
-            </a>
-            {% endif %}
-            {% if can.inventory_create %}
-            <a href="{% url 'inventory:product_create' %}" class="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
-                <span class="font-medium text-gray-800">Nuevo Producto</span>
-            </a>
-            {% endif %}
+    <!-- Ventas e Ingresos Hoy -->
+    <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100 flex flex-col justify-between">
+        <div>
+            <p class="text-gray-400 text-xs uppercase font-bold tracking-wider">Hoy</p>
+            <h3 class="text-2xl font-extrabold text-gray-800 mt-1">${{ revenue_today|default:0|floatformat:2 }}</h3>
+        </div>
+        <div class="mt-4 flex items-center justify-between text-sm text-gray-500 border-t pt-3">
+            <span>{{ sales_today|default:0 }} Transacciones</span>
+            <span class="text-green-600 font-semibold">Hoy</span>
         </div>
     </div>
-    <div class="bg-white rounded-xl shadow-md p-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">Tu cuenta</h2>
-        <div class="space-y-2 text-gray-600">
-            <p><strong>Rol:</strong> {{ user_role_label }}</p>
-            {% if current_organization %}<p><strong>Empresa:</strong> {{ current_organization.name }}</p>{% endif %}
-            {% if current_branch %}<p><strong>Sucursal activa:</strong> {{ current_branch.name }}</p>{% endif %}
+
+    <!-- Ventas e Ingresos Semana -->
+    <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100 flex flex-col justify-between">
+        <div>
+            <p class="text-gray-400 text-xs uppercase font-bold tracking-wider">Esta Semana</p>
+            <h3 class="text-2xl font-extrabold text-gray-800 mt-1">${{ revenue_week|default:0|floatformat:2 }}</h3>
+        </div>
+        <div class="mt-4 flex items-center justify-between text-sm text-gray-500 border-t pt-3">
+            <span>{{ sales_week|default:0 }} Transacciones</span>
+            <span class="text-blue-600 font-semibold">Semana</span>
+        </div>
+    </div>
+
+    <!-- Ventas e Ingresos Mes -->
+    <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100 flex flex-col justify-between">
+        <div>
+            <p class="text-gray-400 text-xs uppercase font-bold tracking-wider">Este Mes</p>
+            <h3 class="text-2xl font-extrabold text-gray-800 mt-1">${{ revenue_month|default:0|floatformat:2 }}</h3>
+        </div>
+        <div class="mt-4 flex items-center justify-between text-sm text-gray-500 border-t pt-3">
+            <span>{{ sales_month|default:0 }} Transacciones</span>
+            <span class="text-indigo-600 font-semibold">Mes</span>
+        </div>
+    </div>
+
+    <!-- Stock Crítico -->
+    <a href="{% url 'inventory:stock_list' %}" class="bg-white rounded-2xl shadow-md p-6 border border-gray-100 flex flex-col justify-between hover:shadow-lg transition">
+        <div>
+            <p class="text-gray-400 text-xs uppercase font-bold tracking-wider">Stock Crítico</p>
+            <h3 class="text-2xl font-extrabold {% if low_stock %}text-red-600{% else %}text-gray-800{% endif %} mt-1">
+                {{ low_stock|default:0 }}
+            </h3>
+        </div>
+        <div class="mt-4 flex items-center justify-between text-sm text-gray-500 border-t pt-3">
+            <span>Productos en alerta</span>
+            <span class="{% if low_stock %}text-red-600 font-bold{% else %}text-gray-500{% endif %}">Revisar</span>
+        </div>
+    </a>
+</div>
+
+<!-- Alertas y Secciones Especiales -->
+{% if low_stock_items %}
+<div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl mb-8 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+        <span class="text-red-500 text-xl">⚠️</span>
+        <div>
+            <h4 class="font-bold text-red-800">Alerta de inventario bajo</h4>
+            <p class="text-sm text-red-700">Tienes productos con stock crítico (5 o menos unidades). Te sugerimos surtirlos pronto.</p>
+        </div>
+    </div>
+    <a href="{% url 'inventory:stock_list' %}" class="px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition">Ver Inventario</a>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Top Productos del Mes -->
+    <div class="lg:col-span-2 bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            ⭐ <span>Productos Más Vendidos (Mes)</span>
+        </h2>
+        {% if top_products %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left text-xs font-bold text-gray-400 border-b pb-2 uppercase tracking-wider">
+                        <th class="pb-2">Producto</th>
+                        <th class="pb-2 text-center">Cantidad Vendida</th>
+                        <th class="pb-2 text-right">Total Recaudado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for p in top_products %}
+                    <tr>
+                        <td class="py-3 font-semibold text-gray-800">{{ p.product__name }}</td>
+                        <td class="py-3 text-center text-gray-600 font-medium">{{ p.total_qty }} unidades</td>
+                        <td class="py-3 text-right text-green-600 font-bold">${{ p.total_revenue|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500 py-6 text-center">No hay registros de ventas para este mes todavía.</p>
+        {% endif %}
+    </div>
+
+    <!-- Menú Lateral / Acciones Rápidas -->
+    <div class="space-y-6">
+        <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Acciones Rápidas</h2>
+            <div class="space-y-3">
+                {% if can.pos %}
+                <a href="{% url 'sales:pos' %}" class="flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-xl transition group">
+                    <span class="font-semibold text-green-800">Abrir Punto de Venta</span>
+                    <span class="text-green-800 group-hover:translate-x-1 transition">→</span>
+                </a>
+                {% endif %}
+                {% if can.inventory_create %}
+                <a href="{% url 'inventory:product_create' %}" class="flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition group">
+                    <span class="font-semibold text-blue-800">Nuevo Producto</span>
+                    <span class="text-blue-800 group-hover:translate-x-1 transition">→</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Sesión Activa</h2>
+            <div class="space-y-3 text-sm text-gray-600">
+                <div class="flex justify-between border-b pb-2">
+                    <span>Rol:</span>
+                    <span class="font-semibold text-gray-800">{{ user_role_label }}</span>
+                </div>
+                <div class="flex justify-between border-b pb-2">
+                    <span>Empresa:</span>
+                    <span class="font-semibold text-gray-800">{{ current_organization.name }}</span>
+                </div>
+                {% if current_branch %}
+                <div class="flex justify-between">
+                    <span>Sucursal:</span>
+                    <span class="font-semibold text-gray-800">📍 {{ current_branch.name }}</span>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>

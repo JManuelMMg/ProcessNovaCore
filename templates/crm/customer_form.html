@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Nuevo Cliente{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 {% block content %}
 <div class="mb-8">
     <a href="{% url 'crm:customer_list' %}" class="text-purple-600 hover:text-purple-900 mb-4 inline-flex items-center gap-2">
@@ -8,12 +8,61 @@
         </svg>
         Volver a clientes
     </a>
-    <h1 class="text-3xl font-bold text-gray-800 mt-4">Nuevo Cliente</h1>
+    <h1 class="text-3xl font-bold text-gray-800 mt-4">{{ title }}</h1>
 </div>
 <div class="bg-white rounded-xl shadow-md p-8 max-w-2xl">
-    <p class="text-gray-500 mb-6">Formulario de creación de cliente en desarrollo. Puedes usar el panel de administración.</p>
-    <a href="/admin/crm/customer/add/" class="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-semibold">
-        Ir a Admin
-    </a>
+    <form method="POST">
+        {% csrf_token %}
+        {% if form.errors %}
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+            <strong>Por favor corrige los siguientes errores:</strong>
+            <ul class="list-disc ml-4 mt-2">
+                {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                <li>{{ field }}: {{ error }}</li>
+                {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <div class="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block text-gray-700 font-medium mb-2">Nombre completo *</label>
+                {{ form.name }}
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-2">Email</label>
+                {{ form.email }}
+            </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block text-gray-700 font-medium mb-2">Teléfono</label>
+                {{ form.phone }}
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-2">RFC</label>
+                {{ form.rfc }}
+            </div>
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 font-medium mb-2">Dirección</label>
+            {{ form.address }}
+        </div>
+        <div class="mb-6">
+            <label class="block text-gray-700 font-medium mb-2">Segmento</label>
+            {{ form.segment }}
+        </div>
+        
+        <div class="flex gap-4">
+            <a href="{% url 'crm:customer_list' %}" class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-semibold text-center">
+                Cancelar
+            </a>
+            <button type="submit" class="flex-1 px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-semibold">
+                Guardar
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}
