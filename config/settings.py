@@ -244,9 +244,37 @@ SITE_URL = os.environ.get('SITE_URL', 'http://localhost:8000')
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': os.environ.get('DJANGO_REQUEST_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
     'root': {
