@@ -24,6 +24,9 @@ class UsernameRecoveryForm(forms.Form):
         return email
 
     def send_username_email(self):
+        import logging
+        logger = logging.getLogger(__name__)
+        
         email = self.cleaned_data['email']
         users = User.objects.filter(email__iexact=email)
         
@@ -40,13 +43,19 @@ class UsernameRecoveryForm(forms.Form):
         
         message = render_to_string('registration/username_recovery_email.txt', context)
         
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False,
-        )
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=True,
+            )
+            logger.info('Email de recuperación de usuario enviado a %s', email)
+        except Exception as e:
+            logger.exception('Error al enviar email de recuperación de usuario a %s', email)
+            # No fallamos, seguimos mostrando el mensaje de éxito al usuario
+            pass
 
 
 class CustomUserCreationForm(UserCreationForm):

@@ -107,7 +107,16 @@ def create_invoice_from_sale(sale, customer, organization):
     number = f"{organization.rfc[:3].upper()}-{folio:06d}"
 
     payment = sale.payments.first()
-    forma_pago_map = {'cash': '01', 'card': '04', 'transfer': '03'}
+    forma_pago_map = {
+        'cash': '01',
+        'card_debit': '04',
+        'card_credit': '04',
+        'transfer': '03',
+        'spei': '03',
+        'check': '02',
+        'loyalty_points': '99',
+        'credit_note': '17',
+    }
 
     invoice = Invoice.objects.create(
         organization=organization,

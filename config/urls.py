@@ -17,8 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from core import views
 from apps.users import views as user_views
+from core.auth_views import SafePasswordResetView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -39,9 +42,9 @@ urlpatterns = [
     # Recuperación de usuario
     path('username-recovery/', views.username_recovery, name='username_recovery'),
     path('username-recovery/done/', views.username_recovery_done, name='username_recovery_done'),
-    # Recuperación de contraseña
+    # Recuperación de contraseña (con manejo seguro de errores)
     path('password-reset/', 
-         auth_views.PasswordResetView.as_view(
+         SafePasswordResetView.as_view(
              template_name='registration/password_reset_form.html',
              email_template_name='registration/password_reset_email.html',
              subject_template_name='registration/password_reset_subject.txt'
@@ -72,3 +75,7 @@ urlpatterns = [
     path('sales/', include('apps.sales.urls', namespace='sales')),
     path('users/', include('apps.users.urls', namespace='users')),
 ]
+
+# Servir media files solo en desarrollo
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

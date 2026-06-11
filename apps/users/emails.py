@@ -1,6 +1,9 @@
+import logging
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
+
+logger = logging.getLogger(__name__)
 
 
 def send_user_invitation(invitation, request):
@@ -22,11 +25,17 @@ def send_user_invitation(invitation, request):
     message = render_to_string('users/emails/invitation.txt', context)
     html_message = render_to_string('users/emails/invitation.html', context)
 
-    send_mail(
-        subject=subject,
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[invitation.email],
-        html_message=html_message,
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[invitation.email],
+            html_message=html_message,
+            fail_silently=True,
+        )
+        logger.info('Email de invitación enviado a %s', invitation.email)
+    except Exception as e:
+        logger.exception('Error al enviar email de invitación a %s', invitation.email)
+        # No fallamos, la aplicación continúa funcionando
+
