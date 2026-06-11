@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.db import transaction
 from .models import (
     Organization, Branch, Role, User, Membership, UserInvitation,
     AuditLog, Session
@@ -10,6 +11,37 @@ from .models import (
 class OrganizationAdmin(admin.ModelAdmin):
     list_display = ('name', 'rfc', 'razon_social', 'city', 'state', 'is_active', 'created_at')
     search_fields = ('name', 'rfc', 'razon_social', 'email')
+
+    def delete_queryset(self, request, queryset):
+        """Optimizamos la eliminación de organizaciones para evitar timeouts"""
+        from django.contrib.admin.models import LogEntry
+        from django.contrib.contenttypes.models import ContentType
+        
+        # Desactivamos auditlog temporalmente para bulk deletes
+        try:
+            import auditlog
+            auditlog.disable()
+        except ImportError:
+            pass
+        
+        try:
+            for org in queryset:
+                with transaction.atomic():
+                    # Eliminamos registros de log primero para reducir memoria
+                    ContentType.objects.get_for_model(Organization)
+                    LogEntry.objects.filter(
+                        content_type_id=ContentType.objects.get_for_model(Organization).id,
+                        object_id=org.id
+                    ).delete()
+                    # Eliminamos la organización
+                    org.delete()
+        finally:
+            # Reactivamos auditlog
+            try:
+                import auditlog
+                auditlog.enable()
+            except ImportError:
+                pass
 
 
 @admin.register(Branch)

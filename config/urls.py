@@ -19,12 +19,18 @@ from django.contrib.auth import views as auth_views
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponseNotFound
 from core import views
 from apps.users import views as user_views
 from core.auth_views import SafePasswordResetView
 
+
+def favicon(request):
+    return HttpResponseNotFound()  # Or later you can add a real favicon
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('favicon.ico', favicon),
     path('sw.js', views.serve_sw, name='sw'),
     path('manifest.json', views.serve_manifest, name='manifest'),
     path('', views.landing_page, name='landing'),
