@@ -1,7 +1,10 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST, require_GET
+from django.views.decorators.http import require_POST
+from django.db.models import Sum
+from datetime import timedelta
+from django.utils import timezone
 from .services import (
     chat_with_ai,
     analizar_inventario_y_sugerir_compras,
@@ -15,9 +18,6 @@ from .services import (
     TOOL_PERMISSIONS
 )
 import json
-from datetime import timedelta
-from django.utils import timezone
-from django.db.models import Sum
 
 
 @login_required
@@ -92,11 +92,16 @@ def api_analizar_inventario(request):
         }, status=403)
     
     try:
-        from apps.inventory.models import Product, Stock
-        productos_db = Product.objects.all()
+        from apps.inventory.models import Product
+        
+        # Filtrar por organización + prefetch para evitar N+1
+        productos_db = Product.objects.filter(
+            organization=request.organization
+        ).prefetch_related('stocks').all()
         
         productos = []
         for p in productos_db:
+            # Ahora es una query precargada, no multiple queries
             stock_total = sum(s.quantity for s in p.stocks.all())
             productos.append({
                 "id": p.id,
@@ -129,7 +134,7 @@ def api_analizar_cliente_crm(request):
         }, status=403)
     
     try:
-        from apps.crm.models import Customer, Interaction
+        from apps.crm.models import Customer
         cliente_db = Customer.objects.first()
         
         if cliente_db:

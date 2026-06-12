@@ -10,7 +10,13 @@ from .forms import CustomerForm, SegmentForm, InteractionForm, LeadForm, Opportu
 @tenant_required
 @permission_required('crm')
 def customer_list(request):
-    customers = Customer.objects.for_org(request.organization).prefetch_related('sales', 'interactions')
+    # Cachear listado de clientes por 10 minutos
+    from django.core.cache import cache
+    cache_key = f'customers_list_{request.organization.id}'
+    customers = cache.get(cache_key)
+    if not customers:
+        customers = list(Customer.objects.for_org(request.organization).prefetch_related('sales', 'interactions'))
+        cache.set(cache_key, customers, 600)
     return render(request, 'crm/customer_list.html', {'customers': customers})
 
 

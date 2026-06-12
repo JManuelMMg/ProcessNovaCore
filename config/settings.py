@@ -204,6 +204,32 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'America/Mexico_City'
 
+# Cache Configuration - con manejo seguro de Redis
+if os.environ.get('REDIS_URL'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': os.environ.get('REDIS_URL'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'redis.Redis',
+                'CONNECTION_POOL_CLASS_KWARGS': {
+                    'ssl_certfile': None,
+                    'ssl_keyfile': None,
+                    'ssl_cert_reqs': None
+                },
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5,
+            }
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'processnova-cache',
+        }
+    }
+
 # Authentication Configuration
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'

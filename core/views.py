@@ -51,9 +51,16 @@ def dashboard(request):
         if request.organization:
             from apps.inventory.models import Product, Stock
             from apps.sales.models import Sale, SaleItem
-            from django.db.models import Sum, Count
+            from django.db.models import Sum, Count, Case, When, Value, IntegerField
             from django.utils import timezone
             from datetime import timedelta
+            from django.core.cache import cache
+
+            # Usar cache por 5 minutos
+            cache_key = f'dashboard_{request.organization.id}_{request.branch.id if request.branch else "all"}'
+            cached = cache.get(cache_key)
+            if cached:
+                return render(request, 'dashboard.html', cached)
 
             today = timezone.now().date()
             week_start = today - timedelta(days=today.weekday())
@@ -63,49 +70,48 @@ def dashboard(request):
             if request.user_role != 'admin_central' and request.branch:
                 sales_qs = sales_qs.filter(branch=request.branch)
 
-            # KPIs de hoy
-            sales_today_qs = sales_qs.filter(created_at__date=today)
-            context['sales_today'] = sales_today_qs.count()
-            context['revenue_today'] = sales_today_qs.aggregate(total=Sum('total'))['total'] or 0
+            # Una única query con agregaciones
+            kpis = sales_qs.aggregate(
+                sales_today=Count(Case(When(created_at__date=today, then=Value(1)), output_field=IntegerField())),
+                revenue_today=Sum(Case(When(created_at__date=today, then='total'), output_field=IntegerField())),
+                sales_week=Count(Case(When(created_at__date__gte=week_start, then=Value(1)), output_field=IntegerField())),
+                revenue_week=Sum(Case(When(created_at__date__gte=week_start, then='total'), output_field=IntegerField())),
+                sales_month=Count(Case(When(created_at__date__gte=month_start, then=Value(1)), output_field=IntegerField())),
+                revenue_month=Sum(Case(When(created_at__date__gte=month_start, then='total'), output_field=IntegerField())),
+            )
 
-            # KPIs de la semana
-            sales_week_qs = sales_qs.filter(created_at__date__gte=week_start)
-            context['sales_week'] = sales_week_qs.count()
-            context['revenue_week'] = sales_week_qs.aggregate(total=Sum('total'))['total'] or 0
+            context.update(kpis)
 
-            # KPIs del mes
-            sales_month_qs = sales_qs.filter(created_at__date__gte=month_start)
-            context['sales_month'] = sales_month_qs.count()
-            context['revenue_month'] = sales_month_qs.aggregate(total=Sum('total'))['total'] or 0
-
-            # Inventario
+            # Inventario - 2 queries
             try:
                 context['total_products'] = Product.objects.for_org(request.organization).count()
-            except Exception:
-                context['total_products'] = 0
-
-            # Stock bajo (≤ min_quantity)
-            try:
                 low_stock_qs = Stock.objects.for_org(request.organization).filter(
                     quantity__lte=5
                 ).select_related('product', 'branch')
                 context['low_stock'] = low_stock_qs.count()
-                context['low_stock_items'] = low_stock_qs[:5]
-            except Exception:
+                context['low_stock_items'] = list(low_stock_qs[:5])
+            except Exception as e:
+                logger.warning('Error en inventario: %s', e)
+                context['total_products'] = 0
                 context['low_stock'] = 0
                 context['low_stock_items'] = []
 
-            # Top 5 productos del mes
+            # Top 5 productos - 1 query optimizada
             try:
-                context['top_products'] = (
+                sales_month_qs = sales_qs.filter(created_at__date__gte=month_start)
+                context['top_products'] = list(
                     SaleItem.objects
                     .filter(sale__in=sales_month_qs)
                     .values('product__name')
                     .annotate(total_qty=Sum('quantity'), total_revenue=Sum('subtotal'))
                     .order_by('-total_qty')[:5]
                 )
-            except Exception:
+            except Exception as e:
+                logger.warning('Error en top productos: %s', e)
                 context['top_products'] = []
+
+            # Cachear por 5 minutos
+            cache.set(cache_key, context, 300)
 
         return render(request, 'dashboard.html', context)
     except Exception as e:

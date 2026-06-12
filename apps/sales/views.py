@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST, require_GET, require_http_methods
+from django.views.decorators.http import require_POST, require_GET
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -502,22 +502,21 @@ def api_sync_offline(request):
 @permission_required('sales_history')
 def sale_list(request):
     from django.core.paginator import Paginator
+    from datetime import date
 
-    sales = _sales_qs(request).filter(status='paid')
+    sales = _sales_qs(request).filter(status='paid').prefetch_related('items__product')
 
     # Date filters
     date_from = request.GET.get('from')
     date_to = request.GET.get('to')
     if date_from:
         try:
-            from datetime import date
             from_dt = date.fromisoformat(date_from)
             sales = sales.filter(created_at__date__gte=from_dt)
         except ValueError:
             pass
     if date_to:
         try:
-            from datetime import date
             to_dt = date.fromisoformat(date_to)
             sales = sales.filter(created_at__date__lte=to_dt)
         except ValueError:
@@ -593,7 +592,6 @@ def sale_cancel(request, pk):
             qty_before = stock.quantity
             stock.quantity += item.quantity
             stock.save()
-            from apps.inventory.models import StockMovement
             StockMovement.objects.create(
                 product=item.product,
                 stock=stock,

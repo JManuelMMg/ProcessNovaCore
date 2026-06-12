@@ -19,6 +19,28 @@ services:
         sync: false
       - key: OPENROUTER_MODEL
         value: google/gemma-4-31b-it:free
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: IMAP_HOST
+        value: imap.gmail.com
+      - key: IMAP_PORT
+        value: "993"
+      - key: SITE_URL
+        value: https://processnovacore.onrender.com
+      - key: REDIS_URL
+        sync: false
+      - key: ALLOWED_HOSTS
+        value: processnovacore.onrender.com
 
 databases:
   - name: processnova-db
