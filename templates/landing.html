@@ -1,477 +1,1258 @@
 <!DOCTYPE html>
-<html lang="es-MX">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProcessNova - ERP SaaS para PYMES</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProcessNova — ERP con IA para PYMES mexicanas</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0B1628;
+    --navy-mid: #112240;
+    --blue-accent: #1A6CF6;
+    --blue-light: #4D8EFF;
+    --cyan: #00D4FF;
+    --surface: #0F1E35;
+    --surface-2: #162A45;
+    --border: rgba(255,255,255,0.08);
+    --text: #E8EFF8;
+    --text-muted: #7A9BB5;
+    --text-dim: #4A6580;
+    --green: #00E5A0;
+    --amber: #FFB830;
+    --white: #fff;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--navy); color: var(--text); font-family: 'Inter', sans-serif; font-size: 16px; line-height: 1.6; overflow-x: hidden; }
+  a { color: inherit; text-decoration: none; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 5%; height: 68px;
+    background: rgba(11,22,40,0.85); backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; }
+  .nav-logo-icon {
+    width: 36px; height: 36px; background: var(--blue-accent);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; color: #fff;
+  }
+  .nav-logo-text { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 18px; }
+  .nav-logo-text span { color: var(--blue-light); }
+  .nav-links { display: flex; gap: 32px; align-items: center; }
+  .nav-links a { font-size: 14px; color: var(--text-muted); transition: color .2s; }
+  .nav-links a:hover { color: var(--white); }
+  .nav-cta {
+    background: var(--blue-accent); color: #fff;
+    padding: 9px 22px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    transition: background .2s, transform .15s;
+  }
+  .nav-cta:hover { background: var(--blue-light); transform: translateY(-1px); }
+  .badge-by { font-size: 11px; color: var(--text-dim); margin-left: 4px; font-weight: 400; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center; padding: 120px 5% 80px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+    width: 900px; height: 900px;
+    background: radial-gradient(circle, rgba(26,108,246,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(26,108,246,0.12); border: 1px solid rgba(26,108,246,0.3);
+    border-radius: 100px; padding: 6px 16px; font-size: 13px; color: var(--blue-light);
+    margin-bottom: 28px; font-weight: 500;
+  }
+  .hero-eyebrow::before { content: '●'; font-size: 8px; color: var(--cyan); }
+  .hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(38px, 6vw, 72px);
+    font-weight: 700; line-height: 1.1; letter-spacing: -1.5px;
+    margin-bottom: 24px; max-width: 900px;
+  }
+  .hero h1 em { font-style: normal; color: var(--blue-light); }
+  .hero-sub {
+    font-size: clamp(16px, 2vw, 19px); color: var(--text-muted);
+    max-width: 620px; margin-bottom: 44px; line-height: 1.7;
+  }
+  .hero-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: center; margin-bottom: 64px; }
+  .btn-primary {
+    background: var(--blue-accent); color: #fff;
+    padding: 14px 32px; border-radius: 10px; font-size: 16px; font-weight: 600;
+    transition: all .2s; border: none; cursor: pointer; display: inline-block;
+  }
+  .btn-primary:hover { background: var(--blue-light); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(26,108,246,0.35); }
+  .btn-secondary {
+    background: transparent; color: var(--text);
+    padding: 14px 28px; border-radius: 10px; font-size: 16px; font-weight: 500;
+    border: 1px solid var(--border); transition: all .2s; cursor: pointer; display: inline-block;
+  }
+  .btn-secondary:hover { border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.04); }
+
+  /* STATS ROW */
+  .stats-row {
+    display: flex; gap: 0; flex-wrap: wrap; justify-content: center;
+    border: 1px solid var(--border); border-radius: 16px;
+    background: var(--surface); overflow: hidden; max-width: 860px; width: 100%;
+  }
+  .stat-item {
+    flex: 1; min-width: 160px; padding: 28px 24px; text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--white); }
+  .stat-num span { color: var(--cyan); }
+  .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+  /* SECCIONES GENERALES */
+  section { padding: 96px 5%; }
+  .section-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--blue-light); margin-bottom: 12px; }
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(28px, 4vw, 44px); font-weight: 700; letter-spacing: -0.8px;
+    line-height: 1.15; margin-bottom: 16px;
+  }
+  .section-sub { color: var(--text-muted); font-size: 17px; max-width: 560px; line-height: 1.7; }
+  .text-center { text-align: center; }
+  .text-center .section-sub { margin: 0 auto; }
+
+  /* PROBLEMA */
+  .problema { background: var(--surface); }
+  .problema-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 52px; }
+  .problema-card {
+    background: var(--navy); border: 1px solid var(--border); border-radius: 14px;
+    padding: 28px; position: relative; overflow: hidden;
+  }
+  .problema-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, #FF4D4D, #FF8C00);
+  }
+  .prob-icon { font-size: 28px; margin-bottom: 14px; }
+  .prob-title { font-weight: 600; font-size: 16px; margin-bottom: 8px; }
+  .prob-desc { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+  /* MODULOS */
+  .modulos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 52px; }
+  .mod-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px 24px; transition: all .25s;
+  }
+  .mod-card:hover { border-color: rgba(26,108,246,0.4); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+  .mod-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .mod-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+  }
+  .mod-title { font-weight: 600; font-size: 16px; }
+  .mod-sub { color: var(--text-muted); font-size: 13px; line-height: 1.55; }
+  .mod-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .tag { background: rgba(26,108,246,0.12); color: var(--blue-light); font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 100px; }
+
+  /* PRECIOS */
+  .precios { background: var(--surface); }
+  .precios-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 52px; max-width: 1000px; margin-left: auto; margin-right: auto; }
+  .precio-card {
+    background: var(--navy); border: 1px solid var(--border);
+    border-radius: 18px; padding: 36px 30px; position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .precio-card.featured {
+    border-color: var(--blue-accent);
+    background: linear-gradient(145deg, rgba(26,108,246,0.08), var(--navy));
+  }
+  .precio-badge {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: var(--blue-accent); color: #fff; font-size: 11px; font-weight: 600;
+    padding: 4px 14px; border-radius: 100px; letter-spacing: 0.5px;
+  }
+  .precio-plan { font-size: 13px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .precio-amount { font-family: 'Space Grotesk', sans-serif; font-size: 38px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+  .precio-amount span { font-size: 16px; color: var(--text-muted); font-weight: 400; }
+  .precio-desc { color: var(--text-muted); font-size: 13px; margin-bottom: 28px; }
+  .precio-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+  .precio-features li { font-size: 14px; color: var(--text); display: flex; gap: 10px; align-items: flex-start; }
+  .precio-features li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .precio-btn {
+    display: block; text-align: center;
+    padding: 12px; border-radius: 10px; font-weight: 600; font-size: 15px; transition: all .2s;
+    cursor: pointer; border: none; width: 100%;
+  }
+  .precio-btn.primary { background: var(--blue-accent); color: #fff; }
+  .precio-btn.primary:hover { background: var(--blue-light); }
+  .precio-btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .precio-btn.secondary:hover { border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.04); }
+
+  /* COMPETENCIA */
+  .tabla-comp {
+    width: 100%; border-collapse: collapse; margin-top: 48px;
+    font-size: 14px;
+  }
+  .tabla-comp th {
+    padding: 14px 20px; text-align: left; font-size: 12px;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .tabla-comp td {
+    padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+  .tabla-comp tr:hover td { background: rgba(255,255,255,0.02); }
+  .tabla-comp tr.pn-row td { background: rgba(26,108,246,0.06); }
+  .tabla-comp tr.pn-row td:first-child { border-left: 2px solid var(--blue-accent); padding-left: 18px; font-weight: 600; color: var(--blue-light); }
+  .check-yes { color: var(--green); font-weight: 600; }
+  .check-no { color: var(--text-dim); }
+  .check-partial { color: var(--amber); }
+
+  /* MERCADO */
+  .mercado { background: var(--surface); }
+  .mercado-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 52px; }
+  .mcard {
+    background: var(--navy); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px 22px;
+  }
+  .mcard-num { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; color: var(--cyan); margin-bottom: 6px; }
+  .mcard-title { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+  .mcard-desc { font-size: 13px; color: var(--text-muted); line-height: 1.55; }
+
+  /* ROI BANNER */
+  .roi-banner {
+    margin: 0 5%; border-radius: 20px;
+    background: linear-gradient(135deg, #0F2E6A 0%, #1A3A7A 50%, #0B1E4A 100%);
+    border: 1px solid rgba(26,108,246,0.3); padding: 64px 5%; text-align: center;
+  }
+  .roi-banner h2 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(28px,4vw,48px); font-weight: 700; margin-bottom: 16px; }
+  .roi-banner p { color: #A0BFDF; font-size: 17px; max-width: 560px; margin: 0 auto 40px; }
+  .roi-stats { display: flex; gap: 0; justify-content: center; flex-wrap: wrap; }
+  .roi-stat { padding: 20px 40px; text-align: center; border-right: 1px solid rgba(255,255,255,0.1); }
+  .roi-stat:last-child { border-right: none; }
+  .roi-num { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; color: var(--cyan); }
+  .roi-label { font-size: 13px; color: #7AA0BF; margin-top: 4px; }
+
+  /* TESTIMONIOS/ENCUESTA */
+  .encuesta-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 16px; margin-top: 52px; }
+  .enc-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px 20px;
+  }
+  .enc-pct { font-family: 'Space Grotesk', sans-serif; font-size: 40px; font-weight: 700; color: var(--white); }
+  .enc-pct span { color: var(--blue-light); }
+  .enc-label { font-size: 13px; color: var(--text-muted); margin-top: 6px; line-height: 1.5; }
+
+  /* CONTACTO */
+  .contacto {
+    background: var(--navy);
+  }
+  .contacto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 40px;
+    margin-top: 52px;
+  }
+  .contacto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .contacto-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .contacto-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(26,108,246,0.15);
+    color: var(--blue-light);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .contacto-details h4 {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+  .contacto-details p {
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .contacto-map {
+    margin-top: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .contacto-map iframe {
+    width: 100%;
+    height: 250px;
+    border: 0;
+    display: block;
+  }
+  .contacto-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+  }
+  .contacto-form h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: var(--white);
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .form-control {
+    width: 100%;
+    background: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .form-control:focus {
+    outline: none;
+    border-color: var(--blue-accent);
+    box-shadow: 0 0 0 3px rgba(26,108,246,0.15);
+  }
+  .btn-submit {
+    width: 100%;
+    background: var(--blue-accent);
+    color: var(--white);
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-submit:hover {
+    background: var(--blue-light);
+    transform: translateY(-1px);
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--navy-mid); border-top: 1px solid var(--border);
+    padding: 56px 5% 32px;
+  }
+  .footer-top { display: flex; gap: 48px; flex-wrap: wrap; justify-content: space-between; margin-bottom: 48px; }
+  .footer-brand { max-width: 280px; }
+  .footer-brand p { color: var(--text-muted); font-size: 14px; margin-top: 12px; line-height: 1.6; }
+  .footer-col h4 { font-weight: 600; font-size: 14px; margin-bottom: 16px; color: var(--white); }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col ul li a { color: var(--text-muted); font-size: 14px; transition: color .2s; }
+  .footer-col ul li a:hover { color: var(--white); }
+  .footer-bottom { border-top: 1px solid var(--border); padding-top: 28px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .footer-bottom p { color: var(--text-dim); font-size: 13px; }
+
+  /* PLANES CHIP */
+  .chip { display: inline-block; background: rgba(0,229,160,0.12); color: var(--green); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; }
+
+  /* Carrusel */
+  .carousel {
+    position: relative;
+    max-width: 900px;
+    margin: 48px auto;
+    overflow: hidden;
+  }
+  .carousel-track {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+  }
+  .carousel-slide {
+    min-width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
+  }
+  .carousel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+  }
+  .carousel-quote {
+    font-size: 18px;
+    color: var(--text);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .carousel-author {
+    font-weight: 600;
+    color: var(--blue-light);
+  }
+  .carousel-role {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .carousel-nav {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .carousel-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .carousel-btn:hover {
+    background: var(--blue-accent);
+    border-color: var(--blue-accent);
+    color: white;
+  }
+  .carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .carousel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .carousel-dot.active {
+    background: var(--blue-accent);
+    width: 30px;
+    border-radius: 5px;
+  }
+  /* Animación de contadores */
+  .counter {
+    transition: all 0.3s;
+  }
+  /* Efecto de brillo en tarjetas */
+  .glow-card {
+    position: relative;
+    overflow: hidden;
+  }
+  .glow-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      to bottom right,
+      rgba(26, 108, 246, 0) 0%,
+      rgba(26, 108, 246, 0.1) 50%,
+      rgba(26, 108, 246, 0) 100%
+    );
+    transform: rotate(45deg);
+    transition: all 0.6s ease-out;
+    opacity: 0;
+  }
+  .glow-card:hover::before {
+    animation: glow-sweep 0.8s ease-out forwards;
+  }
+  @keyframes glow-sweep {
+    0% {
+      top: -50%;
+      left: -50%;
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      top: 150%;
+      left: 150%;
+      opacity: 0;
+    }
+  }
+  /* Efecto de underline animado para navegación */
+  .nav-links a {
+    position: relative;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: var(--blue-light);
+    transition: all 0.3s ease-out;
+    transform: translateX(-50%);
+  }
+  .nav-links a:hover::after {
+    width: 100%;
+  }
+  /* Efecto de shake en tags de módulos */
+  .tag {
+    transition: all 0.3s ease-out;
+  }
+  .tag:hover {
+    transform: scale(1.1) rotate(-2deg);
+    background: rgba(26, 108, 246, 0.3);
+  }
+  /* Efecto de pulso en botones */
+  .btn-primary,
+  .btn-secondary,
+  .precio-btn {
+    transition: all 0.3s ease-out;
+  }
+  .btn-primary:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(26, 108, 246, 0.4);
+  }
+  .btn-secondary:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  }
+  /* Efecto de float en módulos */
+  .mod-card {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .mod-card:hover {
+    transform: translateY(-10px) scale(1.02);
+  }
+  /* Patrón de fondo sutil */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(circle at 20% 80%, rgba(26, 108, 246, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+  /* Efecto de brillo en el icono del hero */
+  .hero-eyebrow::before {
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+  /* Efecto en tarjetas de mercado */
+  .mcard {
+    transition: all 0.3s ease-out;
+  }
+  .mcard:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+  }
+  .mcard-num {
+    transition: all 0.3s ease-out;
+  }
+  .mcard:hover .mcard-num {
+    transform: scale(1.1);
+    color: var(--cyan);
+  }
+  /* Efecto en tarjetas de problema */
+  .problema-card {
+    transition: all 0.3s ease-out;
+  }
+  .problema-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  }
+  .prob-icon {
+    transition: transform 0.3s ease-out;
+  }
+  .problema-card:hover .prob-icon {
+    animation: bounce 0.6s ease-in-out;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  /* Efecto en ROI banner */
+  .roi-stat {
+    transition: all 0.3s ease-out;
+  }
+  .roi-stat:hover {
+    transform: scale(1.1);
+  }
+  /* Efecto en tabla de competencia */
+  .tabla-comp tr {
+    transition: all 0.2s ease-out;
+  }
+  .tabla-comp tr:hover td {
+    background: rgba(26, 108, 246, 0.08);
+  }
+  /* Efecto en formulario */
+  .form-control {
+    transition: all 0.3s ease-out;
+  }
+  .form-control:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(26, 108, 246, 0.2);
+  }
+  .btn-submit:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(26, 108, 246, 0.4);
+  }
+  /* Efecto en tarjetas de encuesta */
+  .enc-card {
+    transition: all 0.3s ease-out;
+  }
+  .enc-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+  }
+  .enc-pct {
+    transition: all 0.3s ease-out;
+  }
+  .enc-card:hover .enc-pct {
+    transform: scale(1.1);
+  }
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .stat-item { min-width: 120px; padding: 20px 14px; }
+    .stat-num { font-size: 24px; }
+    .roi-stat { padding: 16px 20px; }
+    .roi-stat:nth-child(2) { border-right: none; }
+  }
+</style>
 </head>
-<body class="bg-gray-50">
-    <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <a href="{% url 'landing' %}" class="flex items-center space-x-2">
-                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span class="text-white font-bold text-xl">PN</span>
-                </div>
-                <span class="text-2xl font-bold text-gray-900">ProcessNova</span>
-            </a>
-            <nav class="hidden md:flex space-x-8">
-                <a href="#caracteristicas" class="text-gray-600 hover:text-blue-600 font-medium transition">Características</a>
-                <a href="#precios" class="text-gray-600 hover:text-blue-600 font-medium transition">Precios</a>
-                <a href="#contacto" class="text-gray-600 hover:text-blue-600 font-medium transition">Contacto</a>
-            </nav>
-            <div class="flex space-x-4">
-                <a href="{% url 'login' %}" class="px-4 py-2 text-gray-700 font-medium hover:text-blue-600 transition">Iniciar sesión</a>
-                <a href="{% url 'register' %}" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">Regístrate gratis</a>
-            </div>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">PN</div>
+    <div>
+      <div class="nav-logo-text">Process<span>Nova</span></div>
+      <div class="badge-by">by AxtarGet</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="#modulos">Módulos</a>
+    <a href="#precios">Precios</a>
+    <a href="#mercado">Impacto</a>
+    <a href="#contacto">Contacto</a>
+    <a href="{% url 'empresa' %}">Empresa</a>
+    <a href="{% url 'login' %}">Iniciar sesión</a>
+    <a href="{% url 'register' %}" class="nav-cta">Regístrate gratis</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">ERP con Inteligencia Artificial para PYMES mexicanas</div>
+  <h1>Automatiza tu empresa.<br>Compite con <em>tecnología real.</em></h1>
+  <p class="hero-sub">ProcessNova es el sistema de gestión empresarial que une finanzas, inventario, logística, CRM y RRHH en una sola plataforma inteligente — disponible 24/7 desde la nube.</p>
+  <div class="hero-actions">
+    <a href="{% url 'register' %}" class="btn-primary">Iniciar prueba gratuita →</a>
+    <a href="#modulos" class="btn-secondary">Ver qué incluye</a>
+  </div>
+  <div class="stats-row">
+    <div class="stat-item">
+      <div class="stat-num">~<span>0</span>%</div>
+      <div class="stat-label">errores humanos eliminados</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num"><span>48</span>h</div>
+      <div class="stat-label">implementación garantizada</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num"><span>100</span>%</div>
+      <div class="stat-label">ROI anual proyectado</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">24/<span>7</span></div>
+      <div class="stat-label">disponibilidad del sistema</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">$<span>949</span></div>
+      <div class="stat-label">MXN/mes desde</div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEMA -->
+<section class="problema" id="problema">
+  <div class="section-eyebrow">El problema que resolvemos</div>
+  <div class="section-title">Las PYMES pierden tiempo y dinero<br>con procesos manuales</div>
+  <div class="section-sub">El 21% de las empresas en nuestra región no usa ningún software de gestión. La mayoría opera con Excel, papel o WhatsApp.</div>
+  <div class="problema-grid">
+    <div class="problema-card glow-card">
+      <div class="prob-icon">📊</div>
+      <div class="prob-title">Inventario fuera de control</div>
+      <div class="prob-desc">No saber qué tienes en stock en tiempo real genera pérdidas por sobrestock o desabasto. ProcessNova automatiza el reabasto cuando los niveles caen al mínimo.</div>
+    </div>
+    <div class="problema-card glow-card">
+      <div class="prob-icon">📁</div>
+      <div class="prob-title">Finanzas en hojas de cálculo</div>
+      <div class="prob-desc">Llevar la contabilidad en Excel produce errores costosos y dificulta el cumplimiento fiscal con el SAT. Nuestro módulo financiero incluye CFDI 4.0 y reportes automáticos.</div>
+    </div>
+    <div class="problema-card glow-card">
+      <div class="prob-icon">🚚</div>
+      <div class="prob-title">Logística sin visibilidad</div>
+      <div class="prob-desc">Sin tracking en tiempo real, los envíos se pierden y los clientes quedan insatisfechos. Monitorea la salida y llegada de productos desde tu panel.</div>
+    </div>
+    <div class="problema-card glow-card">
+      <div class="prob-icon">💬</div>
+      <div class="prob-title">Clientes sin seguimiento</div>
+      <div class="prob-desc">Perder clientes por falta de seguimiento es más común de lo que parece. El módulo CRM con chatbot de IA atiende y da seguimiento sin que tú lo hagas manualmente.</div>
+    </div>
+  </div>
+</section>
+
+<!-- MÓDULOS -->
+<section id="modulos">
+  <div class="text-center">
+    <div class="section-eyebrow">Qué incluye ProcessNova</div>
+    <div class="section-title">Todos los módulos que tu empresa necesita</div>
+    <div class="section-sub">Cada módulo trabaja de forma independiente y también integrado con el resto — tú decides qué activas primero.</div>
+  </div>
+  <div class="modulos-grid">
+    <div class="mod-card glow-card">
+      <div class="mod-header">
+        <div class="mod-icon" style="background:rgba(26,108,246,0.15)">💰</div>
+        <div class="mod-title">Finanzas & CFDI 4.0</div>
+      </div>
+      <div class="mod-sub">Control contable, facturación electrónica con timbrado fiscal, cálculo de impuestos y generación automática de reportes financieros para el SAT.</div>
+      <div class="mod-tags"><span class="tag">CFDI 4.0</span><span class="tag">SAT</span><span class="tag">Estados financieros</span></div>
+    </div>
+    <div class="mod-card glow-card">
+      <div class="mod-header">
+        <div class="mod-icon" style="background:rgba(0,229,160,0.12)">📦</div>
+        <div class="mod-title">Gestión de Inventario</div>
+      </div>
+      <div class="mod-sub">Monitorea entradas y salidas en tiempo real. Define mínimos de stock y recibe alertas automáticas para reabastecimiento inteligente basado en IA.</div>
+      <div class="mod-tags"><span class="tag">Tiempo real</span><span class="tag">Reabasto IA</span><span class="tag">Reportes</span></div>
+    </div>
+    <div class="mod-card glow-card">
+      <div class="mod-header">
+        <div class="mod-icon" style="background:rgba(0,212,255,0.1)">🚚</div>
+        <div class="mod-title">Logística Inteligente</div>
+      </div>
+      <div class="mod-sub">Seguimiento GPS de envíos con hora de salida y hora de llegada estimada. Categoriza transportes por capacidad y modalidad de entrega.</div>
+      <div class="mod-tags"><span class="tag">Tracking</span><span class="tag">GPS</span><span class="tag">Estimaciones</span></div>
+    </div>
+    <div class="mod-card glow-card">
+      <div class="mod-header">
+        <div class="mod-icon" style="background:rgba(255,184,48,0.1)">🤖</div>
+        <div class="mod-title">CRM con Chatbot IA</div>
+      </div>
+      <div class="mod-sub">Gestiona relaciones con clientes y activa chatbots que responden consultas, calificación de prospectos y seguimiento automático — sin intervención humana.</div>
+      <div class="mod-tags"><span class="tag">Chatbot</span><span class="tag">IA generativa</span><span class="tag">Seguimiento</span></div>
+    </div>
+    <div class="mod-card glow-card">
+      <div class="mod-header">
+        <div class="mod-icon" style="background:rgba(153,100,246,0.12)">📈</div>
+        <div class="mod-title">Análisis Predictivo</div>
+      </div>
+      <div class="mod-sub">Aprende del historial de tu empresa y genera proyecciones de ventas, pérdidas y oportunidades para los próximos meses con modelos de machine learning.</div>
+      <div class="mod-tags"><span class="tag">ML</span><span class="tag">Pronósticos</span><span class="tag">Decisiones</span></div>
+    </div>
+    <div class="mod-card glow-card">
+      <div class="mod-header">
+        <div class="mod-icon" style="background:rgba(255,99,99,0.1)">👥</div>
+        <div class="mod-title">Recursos Humanos</div>
+      </div>
+      <div class="mod-sub">Nómina, control de asistencia, vacaciones y roles del equipo en un solo lugar. Integrado con el módulo financiero para cálculo automático de pagos.</div>
+      <div class="mod-tags"><span class="tag">Nómina</span><span class="tag">Asistencia</span><span class="tag">IMSS</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- DATOS DE MERCADO -->
+<section class="mercado" id="mercado">
+  <div class="text-center">
+    <div class="section-eyebrow">Estudio de mercado — Estado de México 2026</div>
+    <div class="section-title">Los números que respaldan ProcessNova</div>
+    <div class="section-sub">Encuesta aplicada a 211 empresas en San Felipe del Progreso, Atlacomulco, Temascalcingo, Ixtlahuaca y Morelos.</div>
+  </div>
+  <div class="mercado-cards">
+    <div class="mcard glow-card">
+      <div class="mcard-num">79<span style="font-size:20px">%</span></div>
+      <div class="mcard-title">Empresas interesadas en IA</div>
+      <div class="mcard-desc">Del total encuestado, el 79% ya experimenta con automatización o planea adoptarla en los próximos 12 meses.</div>
+    </div>
+    <div class="mcard glow-card">
+      <div class="mcard-num">100<span style="font-size:20px">%</span></div>
+      <div class="mcard-title">Conectividad digital</div>
+      <div class="mcard-desc">El 100% de los encuestados usa internet para actividades diarias del negocio. La barrera de entrada está superada.</div>
+    </div>
+    <div class="mcard glow-card">
+      <div class="mcard-num">68<span style="font-size:20px">%</span></div>
+      <div class="mcard-title">Interés en ProcessNova</div>
+      <div class="mcard-desc">El 31% dijo "sí" y el 37% dijo "quizás" al recibir información sobre el sistema — un mercado potencial del 68%.</div>
+    </div>
+    <div class="mcard glow-card">
+      <div class="mcard-num">3,978</div>
+      <div class="mcard-title">PYMES en la región</div>
+      <div class="mcard-desc">El mercado objetivo regional representa casi 4,000 empresas con interés real o potencial en ProcessNova.</div>
+    </div>
+    <div class="mcard glow-card">
+      <div class="mcard-num">21<span style="font-size:20px">%</span></div>
+      <div class="mcard-title">Sin ningún software</div>
+      <div class="mcard-desc">El 21% de las empresas no usa ningún software de gestión — un segmento de entrada sin competencia interna.</div>
+    </div>
+    <div class="mcard glow-card">
+      <div class="mcard-num">69<span style="font-size:20px">%</span></div>
+      <div class="mcard-title">Venden por internet</div>
+      <div class="mcard-desc">Más de dos tercios ya operan en entornos digitales — ProcessNova se integra de inmediato a su operación actual.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ROI BANNER -->
+<div class="roi-banner">
+  <div class="section-eyebrow" style="text-align:center">Retorno de inversión proyectado</div>
+  <h2>Tu inversión de regresa en <span style="color:var(--cyan)">menos de 14 meses</span></h2>
+  <p>Según nuestras proyecciones financieras validadas con el estudio de mercado regional — 40-50% más rápido que el promedio del sector SaaS.</p>
+  <div class="roi-stats">
+    <div class="roi-stat">
+      <div class="roi-num">68.5%</div>
+      <div class="roi-label">ROI al cierre del Año 1</div>
+    </div>
+    <div class="roi-stat">
+      <div class="roi-num">252%</div>
+      <div class="roi-label">ROI al cierre del Año 2</div>
+    </div>
+    <div class="roi-stat">
+      <div class="roi-num">1,134%</div>
+      <div class="roi-label">ROI proyectado Año 5</div>
+    </div>
+    <div class="roi-stat">
+      <div class="roi-num">87%</div>
+      <div class="roi-label">TIR anual estimada</div>
+    </div>
+  </div>
+</div>
+
+<!-- VS COMPETENCIA -->
+<section id="competencia" style="padding-top: 96px; padding-bottom: 96px;">
+  <div class="text-center" style="margin-bottom:0">
+    <div class="section-eyebrow">Comparativa con la competencia</div>
+    <div class="section-title">ProcessNova vs. otros sistemas ERP</div>
+    <div class="section-sub" style="margin:0 auto">Más completo que Odoo básico, más económico que SAP, y el único especializado al 100% en PYMES mexicanas con IA generativa.</div>
+  </div>
+  <div style="overflow-x:auto; margin-top: 48px;">
+    <table class="tabla-comp">
+      <thead>
+        <tr>
+          <th>Sistema</th>
+          <th>IA Generativa</th>
+          <th>Agentes autónomos</th>
+          <th>CFDI 4.0 México</th>
+          <th>Orientado PYMES MX</th>
+          <th>Precio accesible</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="pn-row">
+          <td>ProcessNova ✦</td>
+          <td class="check-yes">✓ Nativo</td>
+          <td class="check-yes">✓ Completo</td>
+          <td class="check-yes">✓ Integrado</td>
+          <td class="check-yes">✓ Especializado</td>
+          <td class="check-yes">✓ $949/mes</td>
+        </tr>
+        <tr>
+          <td>Odoo</td>
+          <td class="check-partial">~ Básico</td>
+          <td class="check-partial">~ Parcial</td>
+          <td class="check-partial">~ Módulo extra</td>
+          <td class="check-no">✗ Genérico</td>
+          <td class="check-partial">~ Variable</td>
+        </tr>
+        <tr>
+          <td>SAP Business One</td>
+          <td class="check-yes">✓ Sí</td>
+          <td class="check-yes">✓ Sí</td>
+          <td class="check-yes">✓ Sí</td>
+          <td class="check-no">✗ Enterprise</td>
+          <td class="check-no">✗ Muy alto</td>
+        </tr>
+        <tr>
+          <td>Bind ERP</td>
+          <td class="check-no">✗ No</td>
+          <td class="check-no">✗ No</td>
+          <td class="check-yes">✓ Sí</td>
+          <td class="check-partial">~ Parcial</td>
+          <td class="check-yes">✓ Sí</td>
+        </tr>
+        <tr>
+          <td>MS Dynamics 365</td>
+          <td class="check-yes">✓ Copilot</td>
+          <td class="check-yes">✓ Sí</td>
+          <td class="check-partial">~ Configuración</td>
+          <td class="check-no">✗ Enterprise</td>
+          <td class="check-no">✗ Alto</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- DATOS ENCUESTA -->
+<section style="background: var(--surface); padding: 96px 5%;">
+  <div class="text-center">
+    <div class="section-eyebrow">Lo que dijeron las PYMES de tu región</div>
+    <div class="section-title">¿Por qué considerarían ProcessNova?</div>
+    <div class="section-sub">Resultados de la encuesta aplicada en municipios del Estado de México, 2026.</div>
+  </div>
+  <div class="encuesta-cards">
+    <div class="enc-card glow-card">
+      <div class="enc-pct">32<span>%</span></div>
+      <div class="enc-label">quieren mejorar el seguimiento y atención a sus clientes</div>
+    </div>
+    <div class="enc-card glow-card">
+      <div class="enc-pct">30<span>%</span></div>
+      <div class="enc-label">buscan reducir errores humanos prácticamente a cero</div>
+    </div>
+    <div class="enc-card glow-card">
+      <div class="enc-pct">28<span>%</span></div>
+      <div class="enc-label">necesitan recomendaciones estratégicas basadas en datos</div>
+    </div>
+    <div class="enc-card glow-card">
+      <div class="enc-pct">27<span>%</span></div>
+      <div class="enc-label">quieren disminuir sus costos operativos mensuales</div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIOS CARRUSEL -->
+<section style="padding: 96px 5%;">
+  <div class="text-center">
+    <div class="section-eyebrow">Lo que dicen nuestros clientes</div>
+    <div class="section-title">Testimonios de PYMES como la tuya</div>
+  </div>
+  <div class="carousel fade-in">
+    <div class="carousel-track" id="carouselTrack">
+      <div class="carousel-slide">
+        <div class="carousel-card glow-card">
+          <div class="carousel-quote">"ProcessNos va revolucionando la manera en que gestionamos nuestro inventario. Ahora sabemos exactamente qué tenemos y cuándo reabastecer."</div>
+          <div class="carousel-author">María González</div>
+          <div class="carousel-role">Propietaria, Tienda de Ropa "Moda Local"</div>
         </div>
-    </header>
-
-    <main>
-        <!-- Hero Section -->
-        <section class="py-20 bg-gradient-to-br from-blue-50 to-white">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid md:grid-cols-2 gap-12 items-center">
-                    <div>
-                        <h1 class="text-5xl font-bold text-gray-900 mb-6">
-                            ERP SaaS con IA para <span class="text-blue-600">PYMES mexicanas</span>
-                        </h1>
-                        <p class="text-xl text-gray-600 mb-8">
-                            Gestiona inventario, finanzas, CRM, logística y nómina en una sola plataforma, con inteligencia artificial para optimizar tu negocio.
-                        </p>
-                        <div class="flex space-x-4">
-                            <a href="{% url 'register' %}" class="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg text-lg hover:bg-blue-700 transition shadow-lg">
-                                Prueba gratuita
-                            </a>
-                            <a href="#caracteristicas" class="px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg text-lg hover:bg-gray-50 transition border border-gray-200">
-                                Ver más
-                            </a>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-2xl shadow-xl p-6">
-                        <div class="bg-gradient-to-br from-blue-100 to-indigo-50 rounded-xl h-80 flex items-center justify-center">
-                            <div class="text-center">
-                                <svg class="w-24 h-24 mx-auto text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                                </svg>
-                                <p class="text-gray-700 font-semibold text-lg">Dashboard inteligente</p>
-                                <p class="text-gray-500 text-sm mt-2">Todo tu negocio en un solo lugar</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Características Section -->
-        <section id="caracteristicas" class="py-20 bg-white">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-gray-900 mb-4">Todo lo que necesitas para tu negocio</h2>
-                    <p class="text-xl text-gray-600">Características diseñadas para PYMES mexicanas</p>
-                </div>
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <div class="bg-gray-50 rounded-xl p-8 border border-gray-100 hover:shadow-lg transition">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">Inventario</h3>
-                        <p class="text-gray-600 mb-4">Control de stock, códigos QR y movimientos de inventario en tiempo real. Alertas de bajo stock automáticas.</p>
-                    </div>
-                    
-                    <div class="bg-gray-50 rounded-xl p-8 border border-gray-100 hover:shadow-lg transition">
-                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">Finanzas & Facturación</h3>
-                        <p class="text-gray-600 mb-4">Facturación, ingresos, gastos y CFDI 4.0 compatibles con SAT. Reportes financieros automáticos.</p>
-                    </div>
-                    
-                    <div class="bg-gray-50 rounded-xl p-8 border border-gray-100 hover:shadow-lg transition">
-                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">CRM</h3>
-                        <p class="text-gray-600 mb-4">Gestión de clientes, interacciones y segmentación inteligente. Seguimiento de prospectos y ventas.</p>
-                    </div>
-                    
-                    <div class="bg-gray-50 rounded-xl p-8 border border-gray-100 hover:shadow-lg transition">
-                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">Logística</h3>
-                        <p class="text-gray-600 mb-4">Gestión de pedidos, envíos, rutas de entrega y seguimiento de paquetes en tiempo real.</p>
-                    </div>
-                    
-                    <div class="bg-gray-50 rounded-xl p-8 border border-gray-100 hover:shadow-lg transition">
-                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">RRHH & Nóminas</h3>
-                        <p class="text-gray-600 mb-4">Control de personal, asistencias, nóminas y gestión de horarios. Todo en un solo lugar.</p>
-                    </div>
-                    
-                    <div class="bg-gray-50 rounded-xl p-8 border border-gray-100 hover:shadow-lg transition">
-                        <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
-                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-3">IA & Análisis</h3>
-                        <p class="text-gray-600 mb-4">Pronósticos de ventas, detección de anomalías y recomendaciones inteligentes para tu negocio.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Precios Section -->
-        <section id="precios" class="py-20 bg-gray-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-gray-900 mb-4">Planes diseñados para tu negocio</h2>
-                    <p class="text-xl text-gray-600">Solución completa para PYMES mexicanas, desarrollada por AxtarGet</p>
-                </div>
-                <div class="grid md:grid-cols-3 gap-8">
-                    <!-- Plan Básico -->
-                    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                        <div class="p-8">
-                            <h3 class="text-xl font-bold text-gray-900 mb-2">Plan Básico</h3>
-                            <p class="text-gray-600 mb-4">Comienza a automatizar tu negocio</p>
-                            <div class="mb-6">
-                                <span class="text-4xl font-bold text-gray-900">$949</span>
-                                <span class="text-gray-600"> MXN/mes</span>
-                            </div>
-                            <ul class="space-y-3 mb-8">
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Hasta 5 usuarios
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Módulos: Inventario, Finanzas, CRM, Logística, RR.HH. básico
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Gestión de inventario en tiempo real con alertas de reabastecimiento
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Módulo financiero con cálculo y proyecciones básicas
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Chatbot de atención al cliente
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Dashboard con KPIs en tiempo real
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    App móvil incluida
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Notificaciones push y por email
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Facturación CFDI 4.0
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Implementación remota en menos de 48 horas
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Actualizaciones automáticas sin costo adicional
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Soporte técnico vía chat
-                                </li>
-                            </ul>
-                            <a href="{% url 'register' %}" class="w-full block text-center py-3 px-4 border border-blue-600 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition">
-                                Elegir plan
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Plan Profesional (Destacado) -->
-                    <div class="bg-blue-600 rounded-2xl shadow-xl transform scale-105">
-                        <div class="p-8 text-white">
-                            <div class="bg-blue-500 text-blue-100 text-xs font-semibold px-3 py-1 rounded-full inline-block mb-4">
-                                MÁS POPULAR
-                            </div>
-                            <h3 class="text-xl font-bold mb-2">Plan Profesional</h3>
-                            <p class="text-blue-100 mb-4">Todo el poder de la IA para tu negocio</p>
-                            <div class="mb-6">
-                                <span class="text-4xl font-bold">$1,499</span>
-                                <span class="text-blue-200"> MXN/mes</span>
-                            </div>
-                            <ul class="space-y-3 mb-8">
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-200 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Usuarios ilimitados
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-200 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Todo lo del Plan Básico, más:
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-200 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    IA avanzada completa (análisis predictivo, pronósticos de demanda, detección de anomalías con ML)
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-200 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Agentes autónomos 24/7 sin intervención humana
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-200 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Recomendaciones estratégicas generadas por datos históricos
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-200 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Reportes ejecutivos automáticos
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-200 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Seguimiento geolocalizado de logística en tiempo real
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-200 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    RR.HH. completo (nómina, asistencia, gestión de empleados)
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-200 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    API access para integraciones externas
-                                </li>
-                                <li class="flex items-start">
-                                    <svg class="w-5 h-5 text-blue-200 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Soporte técnico prioritario
-                                </li>
-                            </ul>
-                            <a href="{% url 'register' %}" class="w-full block text-center py-3 px-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition">
-                                Elegir plan
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Plan Enterprise -->
-                    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                        <div class="p-8">
-                            <h3 class="text-xl font-bold text-gray-900 mb-2">Plan Enterprise</h3>
-                            <p class="text-gray-600 mb-4">Solución personalizada para tu empresa</p>
-                            <div class="mb-6">
-                                <span class="text-4xl font-bold text-gray-900">Desde $2,500</span>
-                                <span class="text-gray-600"> MXN/proyecto</span>
-                            </div>
-                            <ul class="space-y-3 mb-8">
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Implementación presencial o asistida
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Capacitación personalizada del equipo del cliente
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Módulos a medida según necesidades específicas
-                                </li>
-                                <li class="flex items-start text-gray-600">
-                                    <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Integraciones con sistemas existentes del cliente
-                                </li>
-                            </ul>
-                            <a href="#contacto" class="w-full block text-center py-3 px-4 border border-blue-600 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition">
-                                Contactar ventas
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Contacto Section -->
-        <section id="contacto" class="py-20 bg-white">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid md:grid-cols-2 gap-12">
-                    <div>
-                        <h2 class="text-4xl font-bold text-gray-900 mb-4">Contáctanos</h2>
-                        <p class="text-xl text-gray-600 mb-8">¿Tienes preguntas? Estamos aquí para ayudarte.</p>
-                        
-                        <div class="space-y-6">
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-gray-900">Correo electrónico</h4>
-                                    <p class="text-gray-600">contactoisfaj@gmail.com</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-gray-900">Teléfono</h4>
-                                    <p class="text-gray-600">+52 7226842434</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-gray-900">Ubicación</h4>
-                                    <iframe src="https://www.google.com/maps/embed?pb=!4v1781111863898!6m8!1m7!1suFl5NejbfaxW3sT8vg9biQ!2m2!1d19.71526722827203!2d-99.95289409484064!3f326.35286771209536!4f-1.4037387593650834!5f1.1924812503605782" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gray-50 rounded-2xl p-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-6">Envíanos un mensaje</h3>
-                        <form class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
-                                <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Tu nombre">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
-                                <input type="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="tu@correo.com">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Mensaje</label>
-                                <textarea rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="¿Cómo podemos ayudarte?"></textarea>
-                            </div>
-                            <button type="submit" class="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-                                Enviar mensaje
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-4 gap-8 mb-8">
-                <div>
-                    <div class="flex items-center space-x-2 mb-4">
-                        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <span class="text-white font-bold text-xl">AXG-PN</span>
-                        </div>
-                        <span class="text-2xl font-bold">ProcessNova</span>
-                    </div>
-                    <p class="text-gray-400">ERP SaaS con IA para PYMES mexicanas.</p>
-                </div>
-                
-                <div>
-                    <h4 class="font-semibold mb-4">Producto</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#caracteristicas" class="hover:text-white transition">Características</a></li>
-                        <li><a href="#precios" class="hover:text-white transition">Precios</a></li>
-                        <li><a href="#" class="hover:text-white transition">Integraciones</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h4 class="font-semibold mb-4">Empresa</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white transition">Nosotros</a></li>
-                        <li><a href="#contacto" class="hover:text-white transition">Contacto</a></li>
-                        <li><a href="#" class="hover:text-white transition">Blog</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h4 class="font-semibold mb-4">Legal</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white transition">Términos de servicio</a></li>
-                        <li><a href="#" class="hover:text-white transition">Política de privacidad</a></li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="border-t border-gray-800 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 ProcessNova. Todos los derechos reservados.</p>
-            </div>
+      </div>
+      <div class="carousel-slide">
+        <div class="carousel-card glow-card">
+          <div class="carousel-quote">"La facturación electrónica con CFDI 4.0 nos ahorró horas de trabajo semanales. El sistema es intuitivo y fácil de usar."</div>
+          <div class="carousel-author">Carlos Ramírez</div>
+          <div class="carousel-role">Contador, Distribuidora de Alimentos</div>
         </div>
-    </footer>
+      </div>
+      <div class="carousel-slide">
+        <div class="carousel-card glow-card">
+          <div class="carousel-quote">"El chatbot de IA responde a nuestros clientes 24/7. Hemos aumentado las ventas sin contratar personal adicional."</div>
+          <div class="carousel-author">Ana Martínez</div>
+          <div class="carousel-role">Gerenta, Café & Repostería</div>
+        </div>
+      </div>
+    </div>
+    <div class="carousel-nav">
+      <button class="carousel-btn" id="prevBtn">←</button>
+      <button class="carousel-btn" id="nextBtn">→</button>
+    </div>
+    <div class="carousel-dots" id="carouselDots"></div>
+  </div>
+</section>
+
+<!-- PRECIOS -->
+<section class="precios" id="precios">
+  <div class="text-center">
+    <div class="section-eyebrow">Planes de suscripción</div>
+    <div class="section-title">Sin sorpresas. Sin contratos largos.</div>
+    <div class="section-sub">Elige el plan que se ajuste al tamaño de tu empresa. Cancela cuando quieras. Actualiza en cualquier momento.</div>
+  </div>
+  <div class="precios-grid">
+    <div class="precio-card glow-card">
+      <div>
+        <div class="precio-plan">Plan Básico</div>
+        <div class="precio-amount">$949<span> MXN/mes</span></div>
+        <div class="precio-desc">Hasta 5 usuarios — Ideal para microempresas</div>
+        <ul class="precio-features">
+          <li>Módulo de inventario en tiempo real</li>
+          <li>Módulo de finanzas + CFDI 4.0</li>
+          <li>CRM básico con chatbot IA</li>
+          <li>Reportes automáticos</li>
+          <li>Soporte por chat y tutoriales</li>
+          <li>Implementación en menos de 48h</li>
+        </ul>
+      </div>
+      <a href="{% url 'register' %}" class="precio-btn secondary">Comenzar ahora</a>
+    </div>
+    <div class="precio-card featured">
+      <div>
+        <div class="precio-badge">MÁS POPULAR</div>
+        <div class="precio-plan">Plan Profesional</div>
+        <div class="precio-amount">$1,499<span> MXN/mes</span></div>
+        <div class="precio-desc">Usuarios ilimitados + IA avanzada</div>
+        <ul class="precio-features">
+          <li>Todo lo del Plan Básico</li>
+          <li>Módulo de logística con tracking</li>
+          <li>Módulo de Recursos Humanos</li>
+          <li>IA generativa avanzada y agentes autónomos</li>
+          <li>Análisis predictivo y pronósticos</li>
+          <li>Usuarios ilimitados</li>
+          <li>Soporte prioritario por llamada</li>
+        </ul>
+      </div>
+      <a href="{% url 'register' %}" class="precio-btn primary">Comenzar ahora →</a>
+    </div>
+    <div class="precio-card glow-card">
+      <div>
+        <div class="precio-plan">Plan Enterprise</div>
+        <div class="precio-amount">Desde $2,500<span> MXN/proyecto</span></div>
+        <div class="precio-desc">Solución personalizada para tu empresa</div>
+        <ul class="precio-features">
+          <li>Implementación presencial o asistida</li>
+          <li>Capacitación personalizada del equipo</li>
+          <li>Módulos a medida según necesidades</li>
+          <li>Integraciones con sistemas existentes</li>
+        </ul>
+      </div>
+      <a href="#contacto" class="precio-btn secondary">Contactar ventas</a>
+    </div>
+  </div>
+  <p style="text-align:center; margin-top:28px; color:var(--text-muted); font-size:14px;">¿Necesitas implementación o módulos personalizados? <a href="#contacto" style="color:var(--blue-light)">Contáctanos para un plan Enterprise</a></p>
+</section>
+
+<!-- CONTACTO -->
+<section class="contacto" id="contacto">
+  <div class="text-center">
+    <div class="section-eyebrow">Contáctanos</div>
+    <h2 class="section-title">¿Tienes preguntas? Estamos aquí para ayudarte.</h2>
+    <div class="section-sub" style="margin: 0 auto 40px;">Ponte en contacto con nuestro equipo de atención y soporte.</div>
+  </div>
+  <div class="contacto-grid">
+    <div class="contacto-info">
+      <div class="contacto-item">
+        <div class="contacto-icon">✉</div>
+        <div class="contacto-details">
+          <h4>Correo electrónico</h4>
+          <p>contactoisfaj@gmail.com</p>
+        </div>
+      </div>
+      <div class="contacto-item">
+        <div class="contacto-icon">📞</div>
+        <div class="contacto-details">
+          <h4>Teléfono</h4>
+          <p>+52 7226842434</p>
+        </div>
+      </div>
+      <div class="contacto-item">
+        <div class="contacto-icon">📍</div>
+        <div class="contacto-details">
+          <h4>Ubicación</h4>
+          <div class="contacto-map">
+            <iframe src="https://www.google.com/maps/embed?pb=!4v1781111863898!6m8!1m7!1suFl5NejbfaxW3sT8vg9biQ!2m2!1d19.71526722827203!2d-99.95289409484064!3f326.35286771209536!4f-1.4037387593650834!5f1.1924812503605782" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="contacto-form">
+      <h3>Envíanos un mensaje</h3>
+      <form class="space-y-4">
+        <div class="form-group">
+          <label for="name">Nombre completo</label>
+          <input type="text" id="name" class="form-control" placeholder="Tu nombre">
+        </div>
+        <div class="form-group">
+          <label for="email">Correo electrónico</label>
+          <input type="email" id="email" class="form-control" placeholder="tu@correo.com">
+        </div>
+        <div class="form-group">
+          <label for="message">Mensaje</label>
+          <textarea id="message" rows="4" class="form-control" placeholder="¿Cómo podemos ayudarte?"></textarea>
+        </div>
+        <button type="submit" class="btn-submit">Enviar mensaje</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="nav-logo">
+        <div class="nav-logo-icon">PN</div>
+        <div class="nav-logo-text" style="font-family: 'Space Grotesk', sans-serif; font-weight:600">Process<span style="color:var(--blue-light)">Nova</span></div>
+      </div>
+      <p style="margin-top:12px">Sistema ERP con inteligencia artificial para pequeñas y medianas empresas mexicanas. Un producto de AxtarGet.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Producto</h4>
+      <ul>
+        <li><a href="#modulos">Módulos</a></li>
+        <li><a href="#precios">Precios</a></li>
+        <li><a href="#">Demo interactiva</a></li>
+        <li><a href="#">Integraciones</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Empresa</h4>
+      <ul>
+        <li><a href="{% url 'empresa' %}">Sobre AxtarGet</a></li>
+        <li><a href="#">Misión y Visión</a></li>
+        <li><a href="#">Equipo</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#">Aviso de Privacidad</a></li>
+        <li><a href="#">Términos de Servicio</a></li>
+        <li><a href="#">LFPDPPP</a></li>
+        <li><a href="#">CFDI Compliance</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 AxtarGet S.A.S. — San Felipe del Progreso, Estado de México</p>
+    <p>ProcessNova está registrado ante el IMPI y el INDAUTOR.</p>
+  </div>
+</footer>
+
+    <script>
+      // Carrusel
+      const track = document.getElementById('carouselTrack');
+      const slides = document.querySelectorAll('.carousel-slide');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const dotsContainer = document.getElementById('carouselDots');
+      let currentSlide = 0;
+      const totalSlides = slides.length;
+
+      // Crear dots
+      slides.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.classList.add('carousel-dot');
+        if (index === 0) dot.classList.add('active');
+        dot.addEventListener('click', () => goToSlide(index));
+        dotsContainer.appendChild(dot);
+      });
+      const dots = document.querySelectorAll('.carousel-dot');
+
+      function updateCarousel() {
+        track.style.transform = `translateX(-${currentSlide * 100}%)`;
+        dots.forEach((dot, index) => {
+          dot.classList.toggle('active', index === currentSlide);
+        });
+      }
+
+      function goToSlide(index) {
+        currentSlide = index;
+        if (currentSlide < 0) currentSlide = totalSlides - 1;
+        if (currentSlide >= totalSlides) currentSlide = 0;
+        updateCarousel();
+      }
+
+      prevBtn.addEventListener('click', () => goToSlide(currentSlide - 1));
+      nextBtn.addEventListener('click', () => goToSlide(currentSlide + 1));
+
+      // Auto-avance
+      setInterval(() => goToSlide(currentSlide + 1), 5000);
+
+      // Contadores animados
+      function animateCounter(element, target, suffix = '') {
+        let current = 0;
+        const increment = target / 50;
+        const timer = setInterval(() => {
+          current += increment;
+          if (current >= target) {
+            current = target;
+            clearInterval(timer);
+          }
+          element.textContent = Math.floor(current) + suffix;
+        }, 30);
+      }
+
+      // Observador para contadores
+      const counterObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const counters = entry.target.querySelectorAll('.stat-num span, .mcard-num, .roi-num');
+            counters.forEach(counter => {
+              if (!counter.dataset.animated) {
+                counter.dataset.animated = 'true';
+                const text = counter.textContent;
+                const match = text.match(/(\d+(\.\d+)?)/);
+                if (match) {
+                  const target = parseFloat(match[0]);
+                  const suffix = text.replace(match[0], '');
+                  animateCounter(counter, target, suffix);
+                }
+              }
+            });
+            counterObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      // Observar secciones con contadores
+      document.addEventListener('DOMContentLoaded', () => {
+        const statsSection = document.querySelector('.stats-row').parentElement;
+        if (statsSection) counterObserver.observe(statsSection);
+        
+        const mercadoSection = document.querySelector('.mercado-cards').parentElement;
+        if (mercadoSection) counterObserver.observe(mercadoSection);
+        
+        const roiSection = document.querySelector('.roi-stats').parentElement;
+        if (roiSection) counterObserver.observe(roiSection);
+
+        // Agregar fade-in a secciones
+        const sections = document.querySelectorAll('section, .roi-banner');
+        sections.forEach(section => {
+          section.classList.add('fade-in');
+        });
+
+        // Fade-in observer (copiado de base.html para landing independiente)
+        const fadeObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+            }
+          });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+      });
+    </script>
 </body>
 </html>

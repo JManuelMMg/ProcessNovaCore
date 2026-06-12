@@ -22,6 +22,14 @@ def landing_page(request):
         return HttpResponseServerError('Ocurrió un error, por favor intenta más tarde.')
 
 
+def empresa_page(request):
+    try:
+        return render(request, 'empresa.html')
+    except Exception as e:
+        logger.exception('Error en empresa page: %s', e)
+        return HttpResponseServerError('Ocurrió un error, por favor intenta más tarde.')
+
+
 def serve_sw(request):
     try:
         sw_path = Path(settings.BASE_DIR) / 'static' / 'sw.js'

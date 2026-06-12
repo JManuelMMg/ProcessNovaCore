@@ -7,6 +7,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1d4ed8">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     {% if user.is_authenticated %}
     <script>
     if ('serviceWorker' in navigator) {
@@ -14,8 +15,170 @@
     }
     </script>
     {% endif %}
+    <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      position: relative;
+      overflow-x: hidden;
+    }
+    /* Floating gradient orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.3;
+      z-index: -1;
+      pointer-events: none;
+      animation: float 20s ease-in-out infinite;
+    }
+    .orb-1 {
+      width: 400px;
+      height: 400px;
+      background: linear-gradient(135deg, #1A6CF6, #00D4FF);
+      top: -100px;
+      right: -100px;
+      animation-delay: 0s;
+    }
+    .orb-2 {
+      width: 300px;
+      height: 300px;
+      background: linear-gradient(135deg, #9B6CF6, #1A6CF6);
+      bottom: -50px;
+      left: -50px;
+      animation-delay: -7s;
+    }
+    .orb-3 {
+      width: 250px;
+      height: 250px;
+      background: linear-gradient(135deg, #00D4FF, #00E5A0);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: -14s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.9); }
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 30, 53, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(26, 108, 246, 0.2);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(26, 108, 246, 0.4);
+    }
+    /* Sidebar styling overrides */
+    aside {
+      background: linear-gradient(180deg, #0B1628 0%, #0F203D 100%) !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    aside nav a, aside .absolute a, aside button {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    aside nav a:hover, aside button:hover {
+      transform: translateX(4px);
+      background-color: rgba(26, 108, 246, 0.2) !important;
+      color: #ffffff !important;
+      box-shadow: inset 3px 0 0 0 #1A6CF6;
+    }
+    aside h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: -0.5px;
+    }
+    .border-blue-600 {
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    .bg-blue-800 {
+      background-color: rgba(26, 108, 246, 0.25) !important;
+      color: #4D8EFF !important;
+      border: 1px solid rgba(26, 108, 246, 0.2);
+    }
+    /* Fade-in animation for sections */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* Efecto de brillo en tarjetas */
+    .glow-card {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease-out;
+    }
+    .glow-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        to bottom right,
+        rgba(26, 108, 246, 0) 0%,
+        rgba(26, 108, 246, 0.1) 50%,
+        rgba(26, 108, 246, 0) 100%
+      );
+      transform: rotate(45deg);
+      transition: all 0.6s ease-out;
+      opacity: 0;
+    }
+    .glow-card:hover::before {
+      animation: glow-sweep 0.8s ease-out forwards;
+    }
+    @keyframes glow-sweep {
+      0% {
+        top: -50%;
+        left: -50%;
+        opacity: 0;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        top: 150%;
+        left: 150%;
+        opacity: 0;
+      }
+    }
+    /* Efecto hover en elementos de la sidebar */
+    aside nav a,
+    aside button {
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    }
+    aside nav a:hover,
+    aside button:hover {
+      transform: translateX(6px) scale(1.02) !important;
+      box-shadow: -4px 0 0 0 #1A6CF6, 0 8px 24px rgba(26, 108, 246, 0.2) !important;
+    }
+    /* Efecto de logo en sidebar */
+    aside h1 {
+      transition: all 0.3s ease-out;
+    }
+    aside h1:hover {
+      transform: scale(1.05);
+    }
+  </style>
 </head>
 <body class="bg-gray-50 font-sans">
+    <!-- Floating gradient orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
     <!-- Mostrar mensajes SIEMPRE, incluso si el usuario no está autenticado -->
     {% if messages %}
     <div class="p-4">
@@ -153,5 +316,26 @@
     {% else %}
     </div>
     {% endif %}
+    <script>
+      // Fade-in animation on scroll
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, observerOptions);
+      
+      // Observe all elements with fade-in class
+      document.addEventListener('DOMContentLoaded', () => {
+        const fadeElements = document.querySelectorAll('.fade-in');
+        fadeElements.forEach(el => observer.observe(el));
+      });
+    </script>
 </body>
 </html>

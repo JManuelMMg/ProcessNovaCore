@@ -25,6 +25,9 @@ from apps.users import views as user_views
 from core.auth_views import SafePasswordResetView
 
 
+from django.views.generic import RedirectView
+
+
 def favicon(request):
     return HttpResponseNotFound()  # Or later you can add a real favicon
 
@@ -34,6 +37,9 @@ urlpatterns = [
     path('sw.js', views.serve_sw, name='sw'),
     path('manifest.json', views.serve_manifest, name='manifest'),
     path('', views.landing_page, name='landing'),
+    path('landing.html', RedirectView.as_view(pattern_name='landing', permanent=True)),
+    path('empresa/', views.empresa_page, name='empresa'),
+    path('empresa.html', RedirectView.as_view(pattern_name='empresa', permanent=True)),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('profile/', user_views.user_profile, name='user_profile'),
     path('password-change/', 
