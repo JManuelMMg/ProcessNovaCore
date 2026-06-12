@@ -28,17 +28,15 @@ services:
       - key: EMAIL_USE_TLS
         value: "True"
       - key: EMAIL_HOST_USER
-        sync: false
+        value: contactoisfaj@gmail.com
       - key: EMAIL_HOST_PASSWORD
         sync: false
-      - key: IMAP_HOST
-        value: imap.gmail.com
-      - key: IMAP_PORT
-        value: "993"
+      - key: DEFAULT_FROM_EMAIL
+        value: "ProcessNova <noreply@processnova.mx>"
       - key: SITE_URL
         value: https://processnovacore.onrender.com
       - key: REDIS_URL
-        sync: false
+        value: redis://default:AaboAAIgcDFjYjExMWNhYmY1MzA0ODJhYTQxMGY2NTRmNGUxMWZhYQ@full-glowworm-42728.upstash.io:6379
       - key: ALLOWED_HOSTS
         value: processnovacore.onrender.com
 

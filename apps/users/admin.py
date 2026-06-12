@@ -16,15 +16,9 @@ class OrganizationAdmin(admin.ModelAdmin):
         """Optimizamos la eliminación de organizaciones para evitar timeouts"""
         from django.contrib.admin.models import LogEntry
         from django.contrib.contenttypes.models import ContentType
-        
-        # Desactivamos auditlog temporalmente para bulk deletes
-        try:
-            import auditlog
-            auditlog.disable()
-        except ImportError:
-            pass
-        
-        try:
+        from auditlog.context import disable_auditlog
+
+        with disable_auditlog():
             for org in queryset:
                 with transaction.atomic():
                     # Eliminamos registros de log primero para reducir memoria
@@ -35,13 +29,6 @@ class OrganizationAdmin(admin.ModelAdmin):
                     ).delete()
                     # Eliminamos la organización
                     org.delete()
-        finally:
-            # Reactivamos auditlog
-            try:
-                import auditlog
-                auditlog.enable()
-            except ImportError:
-                pass
 
 
 @admin.register(Branch)

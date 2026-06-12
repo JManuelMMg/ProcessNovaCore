@@ -211,14 +211,8 @@ if os.environ.get('REDIS_URL'):
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
             'LOCATION': os.environ.get('REDIS_URL'),
             'OPTIONS': {
-                'CLIENT_CLASS': 'redis.Redis',
-                'CONNECTION_POOL_CLASS_KWARGS': {
-                    'ssl_certfile': None,
-                    'ssl_keyfile': None,
-                    'ssl_cert_reqs': None
-                },
-                'SOCKET_CONNECT_TIMEOUT': 5,
-                'SOCKET_TIMEOUT': 5,
+                'socket_connect_timeout': 5,
+                'socket_timeout': 5,
             }
         }
     }
@@ -240,29 +234,26 @@ OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY')
 OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'google/gemma-4-31b-it:free')
 
 # Email Configuration
-# En producción, usamos un backend seguro si no hay configuración SMTP
-if os.environ.get('RENDER') and not os.environ.get('EMAIL_HOST'):
-    EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+# Desarrollo: SMTP con fallback silencioso (si el firewall bloquea, loguea en consola)
+# Producción (Render): SMTP real con Gmail
+if os.environ.get('RENDER'):
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 else:
     EMAIL_BACKEND = os.environ.get(
-        'EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend'
+        'EMAIL_BACKEND', 'core.mail_backend.FallbackEmailBackend'
     )
 
 EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587')) if os.environ.get('EMAIL_PORT') else 587
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
+EMAIL_USE_TLS = (os.environ.get('EMAIL_USE_TLS', 'False') == 'True') and not EMAIL_USE_SSL
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_TIMEOUT = 5
 DEFAULT_FROM_EMAIL = os.environ.get(
     'DEFAULT_FROM_EMAIL',
     f'ProcessNova <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'ProcessNova <noreply@processnova.mx>'
 )
-
-# IMAP (recibir correos) - con manejo seguro
-IMAP_HOST = os.environ.get('IMAP_HOST', '')
-IMAP_PORT = int(os.environ.get('IMAP_PORT', '993')) if os.environ.get('IMAP_PORT') else 993
-IMAP_USER = os.environ.get('IMAP_USER', EMAIL_HOST_USER)
-IMAP_PASSWORD = os.environ.get('IMAP_PASSWORD', EMAIL_HOST_PASSWORD)
 
 SITE_URL = os.environ.get('SITE_URL', 'http://localhost:8000')
 

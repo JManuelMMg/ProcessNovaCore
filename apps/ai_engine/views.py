@@ -113,10 +113,9 @@ def api_analizar_inventario(request):
             })
         
         if not productos:
-            productos = [
-                {"id": 1, "nombre": "Café Molido Premium", "stock_actual": 5, "stock_minimo": 20, "ventas_ultimos_30d": 35, "precio_costo": 120.50},
-                {"id": 2, "nombre": "Azúcar Morena 1kg", "stock_actual": 100, "stock_minimo": 50, "ventas_ultimos_30d": 80, "precio_costo": 25.00}
-            ]
+            return JsonResponse({
+                'error': 'No hay productos registrados en tu organización. Agrega productos al inventario para poder analizarlos.'
+            }, status=404)
         
         resultado = analizar_inventario_y_sugerir_compras(productos)
         return JsonResponse(resultado)
@@ -135,22 +134,19 @@ def api_analizar_cliente_crm(request):
     
     try:
         from apps.crm.models import Customer
-        cliente_db = Customer.objects.first()
+        cliente_db = Customer.objects.for_org(request.organization).first()
         
-        if cliente_db:
-            cliente = {"id": cliente_db.id, "nombre": cliente_db.name, "email": cliente_db.email}
-            interacciones_db = cliente_db.interactions.all()[:5]
-            interacciones = [
-                {"tipo": i.type, "fecha": i.created_at.strftime("%Y-%m-%d"), "contenido": i.notes}
-                for i in interacciones_db
-            ]
-        else:
-            cliente = {"id": 1, "nombre": "María González", "email": "maria@ejemplo.com"}
-            interacciones = [
-                {"tipo": "email", "fecha": "2026-06-01", "contenido": "¡Excelente servicio! Estoy muy contenta con mis compras."},
-                {"tipo": "call", "fecha": "2026-06-05", "contenido": "Consulta sobre la garantía del producto, respondida satisfactoriamente."},
-                {"tipo": "chat", "fecha": "2026-06-08", "contenido": "Pregunta sobre disponibilidad de stock, todo perfecto."}
-            ]
+        if not cliente_db:
+            return JsonResponse({
+                'error': 'No hay clientes registrados en tu organización. Agrega clientes al CRM para poder analizarlos.'
+            }, status=404)
+        
+        cliente = {"id": cliente_db.id, "nombre": cliente_db.name, "email": cliente_db.email}
+        interacciones_db = cliente_db.interactions.all()[:5]
+        interacciones = [
+            {"tipo": i.type, "fecha": i.created_at.strftime("%Y-%m-%d"), "contenido": i.notes or ''}
+            for i in interacciones_db
+        ]
         
         resultado = analizar_cliente_crm(cliente, interacciones)
         return JsonResponse(resultado)
