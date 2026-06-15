@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% block title %}Equipo — {{ current_organization.name }}{% endblock %}
 {% block content %}
-<div class="mb-8 flex justify-between items-center">
+<div class="mb-6 lg:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
-        <h1 class="text-3xl font-bold text-gray-800">Equipo</h1>
-        <p class="text-gray-600">Usuarios de {{ current_organization.name }}</p>
+        <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">Equipo</h1>
+        <p class="text-sm lg:text-base text-gray-600">Usuarios de {{ current_organization.name }}</p>
     </div>
-    <div class="flex gap-2">
-        <a href="{% url 'users:user_invite' %}" class="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold transition">✉ Invitar por correo</a>
-        <a href="{% url 'users:user_create' %}" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold transition">+ Crear manual</a>
+    <div class="flex gap-2 flex-wrap">
+        <a href="{% url 'users:user_invite' %}" class="px-4 lg:px-6 py-2 lg:py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold transition text-sm lg:text-base">✉ Invitar</a>
+        <a href="{% url 'users:user_create' %}" class="px-4 lg:px-6 py-2 lg:py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold transition text-sm lg:text-base">+ Crear</a>
     </div>
 </div>
 
@@ -17,7 +17,8 @@
     <h3 class="font-semibold text-yellow-800 mb-3 flex items-center gap-2">
         <span>⏳</span> Invitaciones pendientes ({{ pending_invites.count }})
     </h3>
-    <table class="w-full text-sm">
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm min-w-[500px]">
         <thead>
             <tr class="text-yellow-700 text-left">
                 <th class="pb-2">Correo</th>
@@ -47,11 +48,13 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endif %}
 
 <div class="bg-white rounded-xl shadow-md overflow-hidden">
-    <table class="w-full">
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[500px]">
         <thead class="bg-gray-50">
             <tr>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Usuario</th>
@@ -100,5 +103,6 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}

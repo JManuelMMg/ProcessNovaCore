@@ -35,6 +35,60 @@
   .nav-links a:hover, .nav-links a.active { color: var(--white); }
   .nav-cta { background: var(--blue-accent); color: #fff; padding: 9px 22px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: background .2s; }
   .nav-cta:hover { background: var(--blue-light); }
+  
+  /* HAMBURGER MENU FOR MOBILE */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    padding: 8px;
+  }
+  .hamburger span {
+    width: 24px;
+    height: 2px;
+    background: var(--text);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+  .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+  .hamburger.active span:nth-child(2) { opacity: 0; }
+  .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+  
+  @media (max-width: 768px) {
+    .hamburger { display: flex; }
+    .nav-links {
+      position: fixed;
+      top: 68px;
+      left: 0;
+      right: 0;
+      background: rgba(11, 22, 40, 0.98);
+      flex-direction: column;
+      gap: 20px;
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      transform: translateY(-100%);
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .nav-links.active {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: all;
+    }
+    .hero-empresa { padding: 120px 5% 60px; }
+    section { padding: 60px 5%; }
+    .hero-empresa h1 { font-size: clamp(30px, 7vw, 46px); }
+    .hero-empresa p { font-size: 16px; }
+  }
+
+  @media (max-width: 480px) {
+    .hero-empresa { padding: 110px 5% 50px; }
+    section { padding: 50px 5%; }
+    .hero-empresa h1 { font-size: clamp(26px, 8vw, 40px); }
+    .section-title { font-size: clamp(24px, 6vw, 36px); }
+  }
 
   /* HERO EMPRESA */
   .hero-empresa {
@@ -682,6 +736,33 @@
           observer.observe(el);
         });
       }
+
+      // HAMBURGER MENU FUNCTIONALITY
+      const hamburger = document.getElementById('hamburger');
+      const navLinks = document.querySelector('.nav-links');
+      
+      if (hamburger && navLinks) {
+        hamburger.addEventListener('click', () => {
+          hamburger.classList.toggle('active');
+          navLinks.classList.toggle('active');
+        });
+        
+        // Cerrar menú cuando se haga clic en un enlace
+        navLinks.querySelectorAll('a').forEach(link => {
+          link.addEventListener('click', () => {
+            hamburger.classList.remove('active');
+            navLinks.classList.remove('active');
+          });
+        });
+        
+        // Cerrar menú cuando se haga clic fuera
+        document.addEventListener('click', (e) => {
+          if (!hamburger.contains(e.target) && !navLinks.contains(e.target)) {
+            hamburger.classList.remove('active');
+            navLinks.classList.remove('active');
+          }
+        });
+      }
     });
   </script>
   
@@ -706,6 +787,11 @@
     <a href="{% url 'empresa' %}" class="active">Empresa</a>
     <a href="{% url 'login' %}">Iniciar sesión</a>
     <a href="{% url 'register' %}" class="nav-cta">Regístrate gratis</a>
+  </div>
+  <div class="hamburger" id="hamburger">
+    <span></span>
+    <span></span>
+    <span></span>
   </div>
 </nav>
 
