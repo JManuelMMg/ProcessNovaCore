@@ -255,6 +255,12 @@ DEFAULT_FROM_EMAIL = os.environ.get(
     f'ProcessNova <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'ProcessNova <noreply@processnova.mx>'
 )
 
+# IMAP Configuration (for fetching emails)
+IMAP_HOST = os.environ.get('IMAP_HOST', 'imap.gmail.com')
+IMAP_PORT = int(os.environ.get('IMAP_PORT', '993')) if os.environ.get('IMAP_PORT') else 993
+IMAP_USER = os.environ.get('IMAP_USER', EMAIL_HOST_USER)
+IMAP_PASSWORD = os.environ.get('IMAP_PASSWORD', EMAIL_HOST_PASSWORD)
+
 SITE_URL = os.environ.get('SITE_URL', 'http://localhost:8000')
 
 # Logging para producción
