@@ -2,61 +2,285 @@
 {% block title %}Entrada de Inventario{% endblock %}
 {% block content %}
 <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-800">Entrada de Inventario</h1>
-    <p class="text-gray-600">Escanea productos para agregar stock{% if current_branch %} en {{ current_branch.name }}{% endif %}</p>
+    <a href="{% url 'inventory:product_list' %}" class="text-blue-600 hover:text-blue-900 mb-4 inline-flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Volver a productos
+    </a>
+    <h1 class="text-3xl font-bold text-gray-800 mt-4">Reabastecer Inventario</h1>
+    <p class="text-gray-600">Agrega stock a tus productos{% if current_branch %} en {{ current_branch.name }}{% endif %}</p>
 </div>
-<div class="bg-white rounded-xl shadow-md p-8 max-w-xl">
-    <div class="flex gap-2 mb-4">
-        <input id="barcode-input" type="text" placeholder="Código de barras..."
-            class="flex-1 px-4 py-3 border-2 rounded-xl text-lg" autofocus>
-        <button onclick="scanBarcode()" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold">Buscar</button>
-        <button onclick="toggleCamera()" class="px-4 py-3 bg-gray-700 text-white rounded-xl">📷</button>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Columna izquierda: Escaneo y selección -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Método de entrada -->
+        <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+            <div class="flex border-b border-gray-100">
+                <button id="btn-scan" onclick="switchMode('scan')" class="flex-1 px-6 py-4 font-semibold text-blue-600 bg-blue-50 border-t-4 border-t-blue-600">
+                    Escanear Código
+                </button>
+                <button id="btn-manual" onclick="switchMode('manual')" class="flex-1 px-6 py-4 font-semibold text-gray-600 hover:bg-gray-50">
+                    Seleccionar Producto
+                </button>
+            </div>
+
+            <!-- Modo Escaneo -->
+            <div id="mode-scan" class="p-6">
+                <div class="flex gap-2 mb-4">
+                    <input id="barcode-input" type="text" placeholder="Escanea o escribe el código..."
+                        class="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" autofocus>
+                    <button onclick="scanBarcode()" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">
+                        Agregar
+                    </button>
+                    <button onclick="toggleCamera()" class="px-4 py-3 bg-gray-700 text-white rounded-xl hover:bg-gray-800 transition">
+                        📷
+                    </button>
+                </div>
+                <div id="camera-reader" class="hidden mb-4 rounded-xl overflow-hidden border border-gray-200"></div>
+            </div>
+
+            <!-- Modo Manual -->
+            <div id="mode-manual" class="p-6 hidden">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Producto</label>
+                        <select id="product-select" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none">
+                            <option value="">Selecciona un producto...</option>
+                            {% for product in products %}
+                            <option value="{{ product.pk }}" data-barcode="{{ product.barcode|default:'' }}" data-name="{{ product.name }}">
+                                {{ product.name }} {% if product.sku %} ({{ product.sku }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cantidad común -->
+            <div class="px-6 pb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Cantidad a ingresar</label>
+                <input id="quantity-input" type="number" value="1" min="1" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none">
+                <div class="flex gap-2 mt-3">
+                    <button onclick="addQuantity(1)" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition">+1</button>
+                    <button onclick="addQuantity(5)" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition">+5</button>
+                    <button onclick="addQuantity(10)" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition">+10</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultado -->
+        <div id="result" class="hidden"></div>
     </div>
-    <div id="camera-reader" class="hidden mb-4 rounded-xl overflow-hidden"></div>
-    <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad a ingresar</label>
-        <input id="quantity-input" type="number" value="1" min="1" class="w-full px-4 py-2 border rounded-lg">
+
+    <!-- Columna derecha: Historial de recientes -->
+    <div class="lg:col-span-1">
+        <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 sticky top-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Recientes</h3>
+            <div id="recent-list" class="space-y-2">
+                <p class="text-gray-500 text-sm">No hay productos recientes</p>
+            </div>
+        </div>
     </div>
-    <div id="result" class="hidden p-4 rounded-lg mb-4"></div>
-    <a href="{% url 'inventory:product_create' %}" class="text-blue-600 text-sm">¿Producto nuevo? Crear producto</a>
 </div>
+
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 const csrfToken = '{{ csrf_token }}';
 let scanner = null;
+let recentItems = [];
 
-document.getElementById('barcode-input').addEventListener('keypress', e => { if (e.key === 'Enter') scanBarcode(); });
+// Cargar productos para selección manual
+const products = [
+    {% for product in products %}
+    {
+        id: {{ product.pk }},
+        name: "{{ product.name|escapejs }}",
+        barcode: "{{ product.barcode|default:''|escapejs }}",
+        sku: "{{ product.sku|default:''|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Verificar si hay un producto preseleccionado
+const preselectedProductId = "{{ request.GET.product }}";
+if (preselectedProductId) {
+    const select = document.getElementById('product-select');
+    select.value = preselectedProductId;
+    switchMode('manual');
+}
+
+function switchMode(mode) {
+    const scanMode = document.getElementById('mode-scan');
+    const manualMode = document.getElementById('mode-manual');
+    const btnScan = document.getElementById('btn-scan');
+    const btnManual = document.getElementById('btn-manual');
+    
+    if (mode === 'scan') {
+        scanMode.classList.remove('hidden');
+        manualMode.classList.add('hidden');
+        btnScan.classList.add('text-blue-600', 'bg-blue-50', 'border-t-4', 'border-t-blue-600');
+        btnScan.classList.remove('text-gray-600', 'bg-white');
+        document.getElementById('barcode-input').focus();
+    } else {
+        scanMode.classList.add('hidden');
+        manualMode.classList.remove('hidden');
+        btnScan.classList.remove('text-blue-600', 'bg-blue-50', 'border-t-4', 'border-t-blue-600');
+        document.getElementById('product-select').focus();
+    }
+}
+
+function addQuantity(amount) {
+    const input = document.getElementById('quantity-input');
+    input.value = parseInt(input.value || 0) + amount;
+}
+
+document.getElementById('barcode-input').addEventListener('keypress', e => { 
+    if (e.key === 'Enter') scanBarcode(); 
+});
+
+document.getElementById('product-select').addEventListener('change', function() {
+    if (this.value) {
+        const product = products.find(p => p.id == this.value);
+        if (product) {
+            document.getElementById('quantity-input').focus();
+        }
+    }
+});
+
+document.getElementById('quantity-input').addEventListener('keypress', e => { 
+    if (e.key === 'Enter') {
+        if (!document.getElementById('mode-manual').classList.contains('hidden')) {
+            addManualProduct();
+        } else {
+            scanBarcode();
+        }
+    } 
+});
 
 async function toggleCamera() {
     const reader = document.getElementById('camera-reader');
-    if (scanner) { await scanner.stop(); scanner = null; reader.classList.add('hidden'); return; }
+    if (scanner) { 
+        await scanner.stop(); 
+        scanner = null; 
+        reader.classList.add('hidden'); 
+        return; 
+    }
     reader.classList.remove('hidden');
     scanner = new Html5Qrcode('camera-reader');
-    await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 250, height: 120 } },
-        (text) => { document.getElementById('barcode-input').value = text; scanner.stop(); scanner = null; reader.classList.add('hidden'); scanBarcode(); });
+    await scanner.start(
+        { facingMode: 'environment' }, 
+        { fps: 10, qrbox: { width: 250, height: 120 } },
+        (text) => { 
+            document.getElementById('barcode-input').value = text; 
+            scanner.stop(); 
+            scanner = null; 
+            reader.classList.add('hidden'); 
+            scanBarcode(); 
+        }
+    );
 }
 
 function scanBarcode() {
     const barcode = document.getElementById('barcode-input').value.trim();
     const quantity = document.getElementById('quantity-input').value;
     if (!barcode) return;
-    fetch('/inventory/api/add-stock/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-        body: JSON.stringify({ barcode, quantity: parseInt(quantity) })
-    }).then(r => r.json()).then(data => {
-        const result = document.getElementById('result');
-        result.classList.remove('hidden');
+    addStockByBarcode(barcode, parseInt(quantity));
+}
+
+function addManualProduct() {
+    const productId = document.getElementById('product-select').value;
+    const quantity = document.getElementById('quantity-input').value;
+    if (!productId) {
+        showResult('Por favor selecciona un producto', 'error');
+        return;
+    }
+    addStockById(parseInt(productId), parseInt(quantity));
+}
+
+async function addStockByBarcode(barcode, quantity) {
+    try {
+        const response = await fetch('/inventory/api/add-stock/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ barcode, quantity: quantity })
+        });
+        const data = await response.json();
         if (data.success) {
-            result.className = 'p-4 rounded-lg mb-4 bg-green-50 text-green-800';
-            result.textContent = `✓ ${data.product_name}: nuevo stock = ${data.new_quantity}`;
+            addToRecent(data.product_name, data.new_quantity);
+            showResult(`✓ ${data.product_name}: nuevo stock = ${data.new_quantity}`, 'success');
+            resetInputs();
         } else {
-            result.className = 'p-4 rounded-lg mb-4 bg-red-50 text-red-800';
-            result.textContent = data.error || 'Producto no encontrado';
+            showResult(data.error || 'Producto no encontrado', 'error');
         }
-        document.getElementById('barcode-input').value = '';
+    } catch (error) {
+        showResult('Error al agregar stock', 'error');
+    }
+}
+
+async function addStockById(productId, quantity) {
+    try {
+        const response = await fetch('/inventory/api/add-stock/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ product_id: productId, quantity: quantity })
+        });
+        const data = await response.json();
+        if (data.success) {
+            addToRecent(data.product_name, data.new_quantity);
+            showResult(`✓ ${data.product_name}: nuevo stock = ${data.new_quantity}`, 'success');
+            resetInputs();
+        } else {
+            showResult(data.error || 'Producto no encontrado', 'error');
+        }
+    } catch (error) {
+        showResult('Error al agregar stock', 'error');
+    }
+}
+
+function showResult(message, type) {
+    const result = document.getElementById('result');
+    result.classList.remove('hidden');
+    result.className = 'p-4 rounded-xl mb-4';
+    if (type === 'success') {
+        result.classList.add('bg-green-50', 'text-green-800');
+    } else {
+        result.classList.add('bg-red-50', 'text-red-800');
+    }
+    result.textContent = message;
+    setTimeout(() => { result.classList.add('hidden'); }, 5000);
+}
+
+function addToRecent(productName, newQuantity) {
+    recentItems.unshift({ name: productName, quantity: newQuantity, time: new Date() });
+    if (recentItems.length > 10) recentItems.pop();
+    renderRecent();
+}
+
+function renderRecent() {
+    const container = document.getElementById('recent-list');
+    if (recentItems.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-sm">No hay productos recientes</p>';
+        return;
+    }
+    container.innerHTML = recentItems.map(item => `
+        <div class="p-3 bg-gray-50 rounded-lg flex justify-between items-center">
+            <span class="text-sm font-medium text-gray-800">${item.name}</span>
+            <span class="text-xs text-gray-500">${item.quantity} unid.</span>
+        </div>
+    `).join('');
+}
+
+function resetInputs() {
+    document.getElementById('barcode-input').value = '';
+    document.getElementById('product-select').value = '';
+    document.getElementById('quantity-input').value = '1';
+    if (document.getElementById('mode-scan').classList.contains('hidden')) {
+        document.getElementById('product-select').focus();
+    } else {
         document.getElementById('barcode-input').focus();
-    });
+    }
 }
 </script>
 {% endblock %}

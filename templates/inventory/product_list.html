@@ -6,14 +6,22 @@
         <h1 class="text-3xl font-bold text-gray-800 mb-2">Productos</h1>
         <p class="text-gray-600">Gestión de tu inventario</p>
     </div>
-    {% if can.inventory_create %}
-    <a href="{% url 'inventory:product_create' %}" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-semibold flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-        </svg>
-        Nuevo Producto
-    </a>
-    {% endif %}
+    <div class="flex gap-3">
+        {% if can.inventory_create %}
+        <a href="{% url 'inventory:stock_intake' %}" class="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition font-semibold flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Reabastecer
+        </a>
+        <a href="{% url 'inventory:product_create' %}" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-semibold flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Nuevo Producto
+        </a>
+        {% endif %}
+    </div>
 </div>
 <div class="bg-white rounded-xl shadow-md overflow-hidden">
     {% if products %}
@@ -36,8 +44,11 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ product.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${{ product.price }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{% if product.cost %}${{ product.cost }}{% else %}-{% endif %}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
                     <a href="{% url 'inventory:product_detail' product.pk %}" class="text-blue-600 hover:text-blue-900">Ver detalles</a>
+                    {% if can.inventory_create %}
+                    <a href="{% url 'inventory:stock_intake' %}?product={{ product.pk }}" class="text-green-600 hover:text-green-800">Reabastecer</a>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

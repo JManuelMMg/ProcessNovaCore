@@ -187,7 +187,10 @@ def stock_list(request):
 @tenant_required
 @permission_required('inventory_create')
 def stock_intake(request):
-    return render(request, 'inventory/stock_intake.html')
+    products = _products_qs(request).filter(is_active=True).order_by('name')
+    return render(request, 'inventory/stock_intake.html', {
+        'products': products
+    })
 
 
 @login_required
@@ -280,11 +283,16 @@ def api_quick_create(request):
 def api_add_stock(request):
     data = json.loads(request.body)
     barcode = data.get('barcode', '').strip()
+    product_id = data.get('product_id')
     quantity = int(data.get('quantity', 1))
 
-    product = _products_qs(request).filter(barcode=barcode).first()
-    if not product:
-        product = _products_qs(request).filter(sku__iexact=barcode).first()
+    product = None
+    if product_id:
+        product = _products_qs(request).filter(pk=product_id).first()
+    elif barcode:
+        product = _products_qs(request).filter(barcode=barcode).first()
+        if not product:
+            product = _products_qs(request).filter(sku__iexact=barcode).first()
     if not product:
         return JsonResponse({'error': 'Producto no encontrado'}, status=404)
     if not request.branch:

@@ -1,15 +1,25 @@
 {% extends 'base.html' %}
 {% block title %}Inventario - Stock{% endblock %}
 {% block content %}
-<div class="mb-8">
-    <a href="{% url 'inventory:product_list' %}" class="text-blue-600 hover:text-blue-900 mb-4 inline-flex items-center gap-2">
+<div class="mb-8 flex justify-between items-start">
+    <div>
+        <a href="{% url 'inventory:product_list' %}" class="text-blue-600 hover:text-blue-900 mb-4 inline-flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Volver a productos
+        </a>
+        <h1 class="text-3xl font-bold text-gray-800 mt-4">Stock</h1>
+        <p class="text-gray-600">Nivel de inventario por ubicación</p>
+    </div>
+    {% if can.inventory_create %}
+    <a href="{% url 'inventory:stock_intake' %}" class="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition font-semibold flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
         </svg>
-        Volver a productos
+        Reabastecer
     </a>
-    <h1 class="text-3xl font-bold text-gray-800 mt-4">Stock</h1>
-    <p class="text-gray-600">Nivel de inventario por ubicación</p>
+    {% endif %}
 </div>
 <div class="bg-white rounded-xl shadow-md overflow-hidden">
     {% if stocks %}
@@ -19,6 +29,7 @@
                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Producto</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Sucursal</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Cantidad</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Acciones</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
@@ -27,6 +38,11 @@
                 <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ stock.product.name }}</td>
                 <td class="px-6 py-4 text-sm text-gray-600">{{ stock.branch.name|default:stock.location|default:"—" }}</td>
                 <td class="px-6 py-4 text-sm {% if stock.quantity <= stock.min_quantity %}text-red-600 font-semibold{% else %}text-gray-600{% endif %}">{{ stock.quantity }}</td>
+                <td class="px-6 py-4 text-sm font-medium">
+                    {% if can.inventory_create %}
+                    <a href="{% url 'inventory:stock_intake' %}?product={{ stock.product.pk }}" class="text-green-600 hover:text-green-800">Reabastecer</a>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
