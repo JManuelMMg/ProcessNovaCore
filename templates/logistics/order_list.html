@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Logística - Pedidos{% endblock %}
+{% block content %}
+<div class="mb-8 flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Pedidos</h1>
+        <p class="text-gray-600">Gestiona los pedidos para envío</p>
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'logistics:shipment_list' %}" class="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 font-semibold transition">Envíos</a>
+        <a href="{% url 'logistics:route_list' %}" class="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 font-semibold transition">Rutas</a>
+        <a href="{% url 'logistics:carrier_list' %}" class="px-4 py-2 bg-purple-50 text-purple-700 rounded-xl hover:bg-purple-100 font-semibold transition">Transportistas</a>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
+    {% if orders %}
+    <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-100">
+            <tr>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Número</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for order in orders %}
+            <tr class="hover:bg-gray-50/50 transition">
+                <td class="px-6 py-4 font-bold text-gray-800">{{ order.number }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">{{ order.customer.name|default:"-" }}</td>
+                <td class="px-6 py-4">
+                    {% if order.status == 'delivered' %}
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Entregado</span>
+                    {% elif order.status == 'shipped' %}
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Enviado</span>
+                    {% elif order.status == 'processing' %}
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">En proceso</span>
+                    {% elif order.status == 'cancelled' %}
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Cancelado</span>
+                    {% else %}
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ order.get_status_display }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 font-semibold text-gray-800">${{ order.total }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">{{ order.created_at|date:"d/m/Y" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="px-6 py-16 text-center text-gray-500">No hay pedidos registrados.</div>
+    {% endif %}
+</div>
+{% endblock %}

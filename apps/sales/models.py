@@ -188,20 +188,38 @@ class Sale(TenantAwareModel):
         from django.db import transaction
         from django.utils import timezone as tz
         
+        # Obtener estado anterior si es una actualización
+        old_status = None
+        if self.pk:
+            old_sale = Sale.objects.filter(pk=self.pk).first()
+            if old_sale:
+                old_status = old_sale.status
+        
+        # Lógica para generar número único
         if self.pk is None and not self.number:
-            # Para nuevas ventas, usar un approach más eficiente
             with transaction.atomic():
-                # Guardar primero sin número
                 super().save(*args, **kwargs)
-                
-                # Generar y actualizar el número en la misma transacción
                 year = tz.now().year
                 self.number = f'VEN-{year}-{str(self.pk).zfill(6)}'
-                # Actualizar solo el campo number
                 Sale.objects.filter(pk=self.pk).update(number=self.number)
         else:
-            # Para ventas existentes, guardar normalmente
             super().save(*args, **kwargs)
+        
+        # Si la venta pasa a estado PAGADA y tiene cliente, crear interacción CRM y actualizar cliente
+        if self.status == 'paid' and old_status != 'paid' and self.customer:
+            from apps.crm.models import Interaction
+            
+            # 1. Crear interacción en CRM
+            interaction = Interaction.objects.create(
+                organization=self.organization,
+                customer=self.customer,
+                type='other',
+                notes=f"Venta completada: {self.number} - Total: ${self.total:.2f}",
+                created_by=self.created_by
+            )
+            
+            # 2. Actualizar datos del cliente (lifetime value, órdenes, última compra)
+            self.customer.calculate_lifetime_value()
 
     def calculate_total(self):
         self.subtotal = self.items.aggregate(Sum('subtotal'))['subtotal__sum'] or 0

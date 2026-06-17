@@ -1,7 +1,101 @@
 {% extends 'base.html' %}
-{% block title %}Envío{% endblock %}
+{% block title %}Detalle de Envío{% endblock %}
 {% block content %}
-<div class="bg-white rounded-xl shadow-md p-8 text-center">
-    <p class="text-gray-500 text-lg mb-4">Módulo en desarrollo</p>
+<div class="mb-8">
+    <a href="{% url 'logistics:shipment_list' %}" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold mb-4">← Regresar</a>
+    <h1 class="text-3xl font-bold text-gray-800">Envío {{ shipment.tracking_number|default:shipment.id }}</h1>
+    <p class="text-gray-600">Pedido: {{ shipment.order.number|default:"-" }}</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Info principal -->
+    <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Información del Envío</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Estado</p>
+                    <p class="text-lg font-semibold text-gray-800">
+                        {% if shipment.status == 'delivered' %}
+                            <span class="text-green-600">✓ {{ shipment.get_status_display }}</span>
+                        {% else %}
+                            {{ shipment.get_status_display }}
+                        {% endif %}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Transportista</p>
+                    <p class="text-lg font-semibold text-gray-800">{{ shipment.carrier.name|default:"-" }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Costo de envío</p>
+                    <p class="text-lg font-semibold text-gray-800">${{ shipment.shipping_cost }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Entrega estimada</p>
+                    <p class="text-lg font-semibold text-gray-800">{{ shipment.estimated_delivery|date:"d/m/Y"|default:"-" }}</p>
+                </div>
+            </div>
+            {% if shipment.shipping_address %}
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <p class="text-sm text-gray-500 font-medium mb-2">Dirección de entrega</p>
+                <p class="text-gray-800">{{ shipment.shipping_address }}, {{ shipment.shipping_city }}, {{ shipment.shipping_state }} {{ shipment.shipping_zip_code }}</p>
+                {% if shipment.shipping_phone %}
+                    <p class="text-gray-600 mt-1">Teléfono: {{ shipment.shipping_phone }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Historial de tracking -->
+        <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Historial de Seguimiento</h2>
+            {% if trackings %}
+            <div class="space-y-4">
+                {% for tracking in trackings %}
+                <div class="flex gap-4 items-start pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold flex-shrink-0 mt-0.5">
+                        {% if tracking.status == 'delivered' %}✓{% elif tracking.status == 'cancelled' %}✕{% else %}→{% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800">{{ tracking.get_status_display }}</p>
+                        {% if tracking.status_message %}
+                            <p class="text-gray-600 text-sm">{{ tracking.status_message }}</p>
+                        {% endif %}
+                        <p class="text-xs text-gray-500 mt-1">{{ tracking.created_at|date:"d/m/Y H:i" }} - {{ tracking.tracked_by }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+                <p class="text-gray-500">No hay registros de seguimiento aún.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Actualizar estado -->
+    <div class="lg:col-span-1">
+        <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100 sticky top-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Actualizar Estado</h2>
+            <form method="post" action="{% url 'logistics:update_shipment_status' shipment.pk %}">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nuevo Estado</label>
+                    <select name="status" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition">
+                        {% for value, label in shipment.STATUS_CHOICES %}
+                        <option value="{{ value }}" {% if shipment.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nota (opcional)</label>
+                    <textarea name="status_message" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition" rows="3" placeholder="Añade una nota..."></textarea>
+                </div>
+                <button type="submit" class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition">
+                    Actualizar Estado
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

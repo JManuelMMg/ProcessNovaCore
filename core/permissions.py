@@ -26,7 +26,7 @@ MODULE_PERMISSIONS = {
     'hr_view': [ROLE_ADMIN, ROLE_BRANCH_MANAGER],
     'hr_create': [ROLE_ADMIN, ROLE_BRANCH_MANAGER],
     'hr_edit': [ROLE_ADMIN, ROLE_BRANCH_MANAGER],
-    'logistics': [ROLE_ADMIN, ROLE_BRANCH_MANAGER],
+    'logistics': [ROLE_ADMIN, ROLE_BRANCH_MANAGER, ROLE_EMPLOYEE],
     'ai': [ROLE_ADMIN, ROLE_BRANCH_MANAGER, ROLE_EMPLOYEE],
     'users_manage': [ROLE_ADMIN],
     'branches_manage': [ROLE_ADMIN],

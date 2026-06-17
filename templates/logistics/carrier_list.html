@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Logística - Transportistas{% endblock %}
+{% block content %}
+<div class="mb-8 flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Transportistas</h1>
+        <p class="text-gray-600">Gestiona tus partners de envío</p>
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'logistics:shipment_list' %}" class="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 font-semibold transition">Envíos</a>
+        <a href="{% url 'logistics:route_list' %}" class="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 font-semibold transition">Rutas</a>
+        <a href="{% url 'logistics:order_list' %}" class="px-4 py-2 bg-green-50 text-green-700 rounded-xl hover:bg-green-100 font-semibold transition">Pedidos</a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% if carriers %}
+        {% for carrier in carriers %}
+        <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">{{ carrier.name }}</h3>
+            {% if carrier.company_name %}
+                <p class="text-gray-600 text-sm mb-3">{{ carrier.company_name }}</p>
+            {% endif %}
+            <div class="space-y-2 text-sm text-gray-600 mb-4">
+                {% if carrier.email %}<p>📧 {{ carrier.email }}</p>{% endif %}
+                {% if carrier.phone %}<p>📱 {{ carrier.phone }}</p>{% endif %}
+                {% if carrier.contact_name %}<p>👤 {{ carrier.contact_name }}</p>{% endif %}
+            </div>
+            {% if carrier.is_active %}
+                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-span-full bg-white rounded-2xl shadow-md p-12 text-center border border-gray-100">
+            <p class="text-gray-500">No hay transportistas registrados.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
