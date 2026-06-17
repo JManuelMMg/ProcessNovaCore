@@ -185,28 +185,17 @@ class Sale(TenantAwareModel):
         return f"Venta {self.number or '#' + str(self.id)}"
 
     def save(self, *args, **kwargs):
-        if not self.number:
-            from django.utils import timezone as tz
-            from django.db import transaction, IntegrityError
-            
-            year = tz.now().year
-            
-            # Generar número con manejo seguro de race conditions
-            max_attempts = 10
-            for attempt in range(max_attempts):
-                try:
-                    with transaction.atomic():
-                        # Contar ventas de la organización
-                        count = Sale.objects.filter(organization=self.organization).count() + 1
-                        self.number = f'VEN-{year}-{str(count).zfill(6)}'
-                        super().save(*args, **kwargs)
-                    return
-                except IntegrityError:
-                    if attempt == max_attempts - 1:
-                        raise
-        
-        # Si el número ya existe, solo guardar
+        # Guardar primero sin número para obtener el ID
+        is_new = self.pk is None
         super().save(*args, **kwargs)
+        
+        # Generar número usando el ID (100% seguro y único)
+        if is_new and not self.number:
+            from django.utils import timezone as tz
+            year = tz.now().year
+            self.number = f'VEN-{year}-{str(self.pk).zfill(6)}'
+            # Guardar de nuevo solo el número
+            super().save(update_fields=['number'])
 
     def calculate_total(self):
         self.subtotal = self.items.aggregate(Sum('subtotal'))['subtotal__sum'] or 0
