@@ -164,8 +164,11 @@ function addQuantity(amount) {
     input.value = parseInt(input.value || 0) + amount;
 }
 
-document.getElementById('barcode-input').addEventListener('keypress', e => { 
-    if (e.key === 'Enter') confirmAndAddStock('scan'); 
+document.getElementById('barcode-input').addEventListener('keypress', function(e) { 
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmAndAddStock('scan'); 
+    }
 });
 
 document.getElementById('product-select').addEventListener('change', function() {
@@ -177,8 +180,9 @@ document.getElementById('product-select').addEventListener('change', function() 
     }
 });
 
-document.getElementById('quantity-input').addEventListener('keypress', e => { 
+document.getElementById('quantity-input').addEventListener('keypress', function(e) { 
     if (e.key === 'Enter') {
+        e.preventDefault();
         const isManual = !document.getElementById('mode-manual').classList.contains('hidden');
         confirmAndAddStock(isManual ? 'manual' : 'scan');
     } 
@@ -187,24 +191,29 @@ document.getElementById('quantity-input').addEventListener('keypress', e => {
 async function toggleCamera() {
     const reader = document.getElementById('camera-reader');
     if (scanner) { 
-        await scanner.stop(); 
+        try { await scanner.stop(); } catch(e) {}
         scanner = null; 
         reader.classList.add('hidden'); 
         return; 
     }
     reader.classList.remove('hidden');
-    scanner = new Html5Qrcode('camera-reader');
-    await scanner.start(
-        { facingMode: 'environment' }, 
-        { fps: 10, qrbox: { width: 250, height: 120 } },
-        (text) => { 
-            document.getElementById('barcode-input').value = text; 
-            scanner.stop(); 
-            scanner = null; 
-            reader.classList.add('hidden'); 
-            confirmAndAddStock('scan'); 
-        }
-    );
+    try {
+        scanner = new Html5Qrcode('camera-reader');
+        await scanner.start(
+            { facingMode: 'environment' }, 
+            { fps: 10, qrbox: { width: 250, height: 120 } },
+            function(text) { 
+                document.getElementById('barcode-input').value = text; 
+                try { scanner.stop(); } catch(e) {}
+                scanner = null; 
+                reader.classList.add('hidden'); 
+                confirmAndAddStock('scan'); 
+            }
+        );
+    } catch (error) {
+        showResult('Error al activar la cámara: ' + error.message, 'error');
+        reader.classList.add('hidden');
+    }
 }
 
 // Función de confirmación
@@ -235,10 +244,10 @@ function confirmAndAddStock(mode) {
 
     // Guardamos los datos pendientes
     pendingStockData = {
-        mode,
-        productId,
-        barcode,
-        quantity
+        mode: mode,
+        productId: productId,
+        barcode: barcode,
+        quantity: quantity
     };
 
     // Mostramos el modal
@@ -248,13 +257,15 @@ function confirmAndAddStock(mode) {
 }
 
 function showConfirmationModal() {
-    document.getElementById('confirmation-modal').classList.remove('hidden');
-    document.getElementById('confirmation-modal').classList.add('flex');
+    const modal = document.getElementById('confirmation-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 function hideConfirmationModal() {
-    document.getElementById('confirmation-modal').classList.add('hidden');
-    document.getElementById('confirmation-modal').classList.remove('flex');
+    const modal = document.getElementById('confirmation-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
     pendingStockData = null;
 }
 
@@ -262,11 +273,17 @@ async function processConfirmedStock() {
     if (!pendingStockData) return;
     
     hideConfirmationModal();
+    showResult('Procesando reabastecimiento...', 'info');
 
-    if (pendingStockData.mode === 'manual') {
-        await addStockById(pendingStockData.productId, pendingStockData.quantity);
-    } else {
-        await addStockByBarcode(pendingStockData.barcode, pendingStockData.quantity);
+    try {
+        let result;
+        if (pendingStockData.mode === 'manual') {
+            result = await addStockById(pendingStockData.productId, pendingStockData.quantity);
+        } else {
+            result = await addStockByBarcode(pendingStockData.barcode, pendingStockData.quantity);
+        }
+    } catch (error) {
+        showResult('Error al procesar el reabastecimiento: ' + error.message, 'error');
     }
 }
 
@@ -274,19 +291,26 @@ async function addStockByBarcode(barcode, quantity) {
     try {
         const response = await fetch('/inventory/api/add-stock/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-            body: JSON.stringify({ barcode, quantity: quantity })
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-CSRFToken': csrfToken 
+            },
+            body: JSON.stringify({ barcode: barcode, quantity: quantity })
         });
+        
         const data = await response.json();
-        if (data.success) {
+        
+        if (response.ok && data.success) {
             addToRecent(data.product_name, data.new_quantity);
-            showResult(`✓ ${data.product_name}: nuevo stock = ${data.new_quantity}`, 'success');
+            showResult('✓ ' + data.product_name + ': nuevo stock = ' + data.new_quantity, 'success');
             resetInputs();
+            return data;
         } else {
-            showResult(data.error || 'Producto no encontrado', 'error');
+            showResult(data.error || 'Error al reabastecer', 'error');
         }
     } catch (error) {
-        showResult('Error al agregar stock', 'error');
+        console.error(error);
+        showResult('Error al conectar con el servidor: ' + error.message, 'error');
     }
 }
 
@@ -294,19 +318,26 @@ async function addStockById(productId, quantity) {
     try {
         const response = await fetch('/inventory/api/add-stock/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-CSRFToken': csrfToken 
+            },
             body: JSON.stringify({ product_id: productId, quantity: quantity })
         });
+        
         const data = await response.json();
-        if (data.success) {
+        
+        if (response.ok && data.success) {
             addToRecent(data.product_name, data.new_quantity);
-            showResult(`✓ ${data.product_name}: nuevo stock = ${data.new_quantity}`, 'success');
+            showResult('✓ ' + data.product_name + ': nuevo stock = ' + data.new_quantity, 'success');
             resetInputs();
+            return data;
         } else {
-            showResult(data.error || 'Producto no encontrado', 'error');
+            showResult(data.error || 'Error al reabastecer', 'error');
         }
     } catch (error) {
-        showResult('Error al agregar stock', 'error');
+        console.error(error);
+        showResult('Error al conectar con el servidor: ' + error.message, 'error');
     }
 }
 
@@ -314,13 +345,22 @@ function showResult(message, type) {
     const result = document.getElementById('result');
     result.classList.remove('hidden');
     result.className = 'p-4 rounded-xl mb-4';
+    
     if (type === 'success') {
         result.classList.add('bg-green-50', 'text-green-800');
-    } else {
+    } else if (type === 'error') {
         result.classList.add('bg-red-50', 'text-red-800');
+    } else {
+        result.classList.add('bg-blue-50', 'text-blue-800');
     }
+    
     result.textContent = message;
-    setTimeout(() => { result.classList.add('hidden'); }, 5000);
+    
+    if (type !== 'info') {
+        setTimeout(function() { 
+            result.classList.add('hidden'); 
+        }, 5000);
+    }
 }
 
 function addToRecent(productName, newQuantity) {
@@ -335,18 +375,19 @@ function renderRecent() {
         container.innerHTML = '<p class="text-gray-500 text-sm">No hay productos recientes</p>';
         return;
     }
-    container.innerHTML = recentItems.map(item => `
-        <div class="p-3 bg-gray-50 rounded-lg flex justify-between items-center">
-            <span class="text-sm font-medium text-gray-800">${item.name}</span>
-            <span class="text-xs text-gray-500">${item.quantity} unid.</span>
-        </div>
-    `).join('');
+    container.innerHTML = recentItems.map(function(item) {
+        return '<div class="p-3 bg-gray-50 rounded-lg flex justify-between items-center">' +
+            '<span class="text-sm font-medium text-gray-800">' + item.name + '</span>' +
+            '<span class="text-xs text-gray-500">' + item.quantity + ' unid.</span>' +
+        '</div>';
+    }).join('');
 }
 
 function resetInputs() {
     document.getElementById('barcode-input').value = '';
     document.getElementById('product-select').value = '';
     document.getElementById('quantity-input').value = '1';
+    
     if (document.getElementById('mode-scan').classList.contains('hidden')) {
         document.getElementById('product-select').focus();
     } else {
