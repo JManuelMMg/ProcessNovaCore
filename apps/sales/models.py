@@ -185,17 +185,23 @@ class Sale(TenantAwareModel):
         return f"Venta {self.number or '#' + str(self.id)}"
 
     def save(self, *args, **kwargs):
-        # Guardar primero sin número para obtener el ID
-        is_new = self.pk is None
-        super().save(*args, **kwargs)
+        from django.db import transaction
+        from django.utils import timezone as tz
         
-        # Generar número usando el ID (100% seguro y único)
-        if is_new and not self.number:
-            from django.utils import timezone as tz
-            year = tz.now().year
-            self.number = f'VEN-{year}-{str(self.pk).zfill(6)}'
-            # Guardar de nuevo solo el número
-            super().save(update_fields=['number'])
+        if self.pk is None and not self.number:
+            # Para nuevas ventas, usar un approach más eficiente
+            with transaction.atomic():
+                # Guardar primero sin número
+                super().save(*args, **kwargs)
+                
+                # Generar y actualizar el número en la misma transacción
+                year = tz.now().year
+                self.number = f'VEN-{year}-{str(self.pk).zfill(6)}'
+                # Actualizar solo el campo number
+                Sale.objects.filter(pk=self.pk).update(number=self.number)
+        else:
+            # Para ventas existentes, guardar normalmente
+            super().save(*args, **kwargs)
 
     def calculate_total(self):
         self.subtotal = self.items.aggregate(Sum('subtotal'))['subtotal__sum'] or 0
