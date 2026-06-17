@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Surtir Pedido {{ order.number }} - Logística{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <a href="{% url 'logistics:order_detail' order.pk %}" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold mb-4">← Regresar</a>
+    <h1 class="text-3xl font-bold text-gray-800">Surtir Pedido {{ order.number|default:"#"|add:order.id }}</h1>
+</div>
+
+<div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100 max-w-3xl">
+    <div class="mb-6">
+        <p class="text-gray-600 mb-4">Está a punto de surtir este pedido. Esto creará automáticamente una venta y actualizará el inventario.</p>
+        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+            <p class="text-yellow-800 text-sm font-semibold">⚠️ Asegúrese de que hay existencias suficientes para todos los productos.</p>
+        </div>
+    </div>
+    
+    <div class="mb-6 border-t border-b border-gray-100 py-4">
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">Resumen del pedido</h3>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+                <p class="text-gray-500">Cliente</p>
+                <p class="font-semibold">{{ order.customer.name|default:"Sin cliente" }}</p>
+            </div>
+            <div>
+                <p class="text-gray-500">Total</p>
+                <p class="font-bold text-xl text-green-600">${{ order.total|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="flex gap-3">
+            <button type="submit" class="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold transition">Confirmar Surtido</button>
+            <a href="{% url 'logistics:order_detail' order.pk %}" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-semibold transition text-center">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

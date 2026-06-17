@@ -219,6 +219,7 @@ class Income(TenantAwareModel):
     ]
 
     invoice = models.ForeignKey(Invoice, on_delete=models.SET_NULL, null=True, blank=True, related_name='incomes')
+    sale = models.ForeignKey('sales.Sale', on_delete=models.SET_NULL, null=True, blank=True, related_name='incomes')
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True, related_name='incomes')
     account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='incomes')
     type = models.CharField(max_length=20, choices=INCOME_TYPE_CHOICES, default='sale')

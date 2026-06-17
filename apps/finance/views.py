@@ -20,19 +20,42 @@ def _invoices_qs(request):
 @permission_required('finance')
 def dashboard(request):
     org = request.organization
+    from apps.sales.models import Sale
+    from datetime import datetime, timedelta
+    today = datetime.now().date()
+    week_ago = today - timedelta(days=7)
+    month_ago = today - timedelta(days=30)
+    
+    # Datos de facturación
     total_invoices = Invoice.objects.for_org(org).count()
+    stamped = Invoice.objects.for_org(org).filter(cfdi_status='stamped').count()
+    
+    # Datos de ingresos y gastos
     total_income = Income.objects.for_org(org).aggregate(Sum('amount'))['amount__sum'] or 0
     total_expense = Expense.objects.for_org(org).aggregate(Sum('amount'))['amount__sum'] or 0
-    stamped = Invoice.objects.for_org(org).filter(cfdi_status='stamped').count()
+    
+    # Datos de ventas
+    total_sales = Sale.objects.for_org(org).filter(status='paid').aggregate(Sum('total'))['total__sum'] or 0
+    sales_count = Sale.objects.for_org(org).filter(status='paid').count()
+    sales_today = Sale.objects.for_org(org).filter(status='paid', created_at__date=today).aggregate(Sum('total'))['total__sum'] or 0
+    sales_week = Sale.objects.for_org(org).filter(status='paid', created_at__date__gte=week_ago).aggregate(Sum('total'))['total__sum'] or 0
+    sales_month = Sale.objects.for_org(org).filter(status='paid', created_at__date__gte=month_ago).aggregate(Sum('total'))['total__sum'] or 0
+    
     return render(request, 'finance/dashboard.html', {
         'total_invoices': total_invoices,
         'total_income': total_income,
         'total_expense': total_expense,
         'balance': total_income - total_expense,
         'stamped_invoices': stamped,
+        'total_sales': total_sales,
+        'sales_count': sales_count,
+        'sales_today': sales_today,
+        'sales_week': sales_week,
+        'sales_month': sales_month,
         'recent_invoices': _invoices_qs(request)[:5],
         'recent_incomes': Income.objects.for_org(org).order_by('-date')[:5],
         'recent_expenses': Expense.objects.for_org(org).order_by('-date')[:5],
+        'recent_sales': Sale.objects.for_org(org).filter(status='paid').order_by('-created_at')[:5],
     })
 
 

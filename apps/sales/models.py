@@ -155,6 +155,7 @@ class Sale(TenantAwareModel):
     number = models.CharField(max_length=50, unique=True, blank=True)
     branch = models.ForeignKey('users.Branch', on_delete=models.SET_NULL, null=True, blank=True, related_name='sales')
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True, related_name='sales')
+    order = models.ForeignKey('logistics.Order', on_delete=models.SET_NULL, null=True, blank=True, related_name='sales')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sales')
     salesperson = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sales_as_salesperson')
     commission_plan = models.ForeignKey(CommissionPlan, on_delete=models.SET_NULL, null=True, blank=True, related_name='sales')
@@ -187,6 +188,7 @@ class Sale(TenantAwareModel):
     def save(self, *args, **kwargs):
         from django.db import transaction
         from django.utils import timezone as tz
+        from datetime import date
         
         # Obtener estado anterior si es una actualización
         old_status = None
@@ -205,21 +207,32 @@ class Sale(TenantAwareModel):
         else:
             super().save(*args, **kwargs)
         
-        # Si la venta pasa a estado PAGADA y tiene cliente, crear interacción CRM y actualizar cliente
-        if self.status == 'paid' and old_status != 'paid' and self.customer:
-            from apps.crm.models import Interaction
+        # Si la venta pasa a estado PAGADA
+        if self.status == 'paid' and old_status != 'paid':
+            # Crear interacción CRM y actualizar cliente si existe
+            if self.customer:
+                from apps.crm.models import Interaction
+                Interaction.objects.create(
+                    organization=self.organization,
+                    customer=self.customer,
+                    type='other',
+                    notes=f"Venta completada: {self.number} - Total: ${self.total:.2f}",
+                    created_by=self.created_by
+                )
+                self.customer.calculate_lifetime_value()
             
-            # 1. Crear interacción en CRM
-            interaction = Interaction.objects.create(
+            # Crear ingreso automático en Finanzas
+            from apps.finance.models import Income
+            Income.objects.create(
                 organization=self.organization,
+                sale=self,
                 customer=self.customer,
-                type='other',
-                notes=f"Venta completada: {self.number} - Total: ${self.total:.2f}",
-                created_by=self.created_by
+                type='sale',
+                amount=self.total,
+                description=f"Ingreso por venta {self.number}",
+                date=date.today(),
+                reference=self.number
             )
-            
-            # 2. Actualizar datos del cliente (lifetime value, órdenes, última compra)
-            self.customer.calculate_lifetime_value()
 
     def calculate_total(self):
         self.subtotal = self.items.aggregate(Sum('subtotal'))['subtotal__sum'] or 0
