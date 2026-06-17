@@ -31,7 +31,7 @@
                 <div class="flex gap-2 mb-4">
                     <input id="barcode-input" type="text" placeholder="Escanea o escribe el código..."
                         class="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" autofocus>
-                    <button onclick="scanBarcode()" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">
+                    <button onclick="confirmAndAddStock('scan')" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">
                         Agregar
                     </button>
                     <button onclick="toggleCamera()" class="px-4 py-3 bg-gray-700 text-white rounded-xl hover:bg-gray-800 transition">
@@ -67,6 +67,9 @@
                     <button onclick="addQuantity(5)" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition">+5</button>
                     <button onclick="addQuantity(10)" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition">+10</button>
                 </div>
+                <button onclick="confirmAndAddStock('manual')" class="w-full mt-4 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold transition">
+                    Confirmar y Reabastecer
+                </button>
             </div>
         </div>
 
@@ -85,11 +88,36 @@
     </div>
 </div>
 
+<!-- Modal de Confirmación -->
+<div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+            <h3 class="text-xl font-bold">Confirmar Reabastecimiento</h3>
+        </div>
+        <div class="p-6">
+            <p class="text-gray-600 mb-4">Estás a punto de reabastecer el siguiente producto:</p>
+            <div class="bg-gray-50 rounded-xl p-4 mb-6">
+                <p class="font-semibold text-lg text-gray-800" id="confirm-product-name">Producto</p>
+                <p class="text-2xl font-bold text-blue-600 mt-2">Cantidad: <span id="confirm-quantity">0</span></p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="hideConfirmationModal()" class="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-semibold transition">
+                    Cancelar
+                </button>
+                <button onclick="processConfirmedStock()" class="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold transition">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 const csrfToken = '{{ csrf_token }}';
 let scanner = null;
 let recentItems = [];
+let pendingStockData = null;
 
 // Cargar productos para selección manual
 const products = [
@@ -137,7 +165,7 @@ function addQuantity(amount) {
 }
 
 document.getElementById('barcode-input').addEventListener('keypress', e => { 
-    if (e.key === 'Enter') scanBarcode(); 
+    if (e.key === 'Enter') confirmAndAddStock('scan'); 
 });
 
 document.getElementById('product-select').addEventListener('change', function() {
@@ -151,11 +179,8 @@ document.getElementById('product-select').addEventListener('change', function() 
 
 document.getElementById('quantity-input').addEventListener('keypress', e => { 
     if (e.key === 'Enter') {
-        if (!document.getElementById('mode-manual').classList.contains('hidden')) {
-            addManualProduct();
-        } else {
-            scanBarcode();
-        }
+        const isManual = !document.getElementById('mode-manual').classList.contains('hidden');
+        confirmAndAddStock(isManual ? 'manual' : 'scan');
     } 
 });
 
@@ -177,26 +202,72 @@ async function toggleCamera() {
             scanner.stop(); 
             scanner = null; 
             reader.classList.add('hidden'); 
-            scanBarcode(); 
+            confirmAndAddStock('scan'); 
         }
     );
 }
 
-function scanBarcode() {
-    const barcode = document.getElementById('barcode-input').value.trim();
-    const quantity = document.getElementById('quantity-input').value;
-    if (!barcode) return;
-    addStockByBarcode(barcode, parseInt(quantity));
+// Función de confirmación
+function confirmAndAddStock(mode) {
+    const quantity = parseInt(document.getElementById('quantity-input').value || 1);
+    let productName = '';
+    let productId = null;
+    let barcode = null;
+
+    if (mode === 'manual') {
+        productId = document.getElementById('product-select').value;
+        if (!productId) {
+            showResult('Por favor selecciona un producto', 'error');
+            return;
+        }
+        const product = products.find(p => p.id == productId);
+        productName = product ? product.name : '';
+    } else {
+        barcode = document.getElementById('barcode-input').value.trim();
+        if (!barcode) {
+            showResult('Por favor ingresa un código de barras', 'error');
+            return;
+        }
+        // Intentamos encontrar el producto por barcode
+        const product = products.find(p => p.barcode === barcode || p.sku === barcode);
+        productName = product ? product.name : `Producto con código: ${barcode}`;
+    }
+
+    // Guardamos los datos pendientes
+    pendingStockData = {
+        mode,
+        productId,
+        barcode,
+        quantity
+    };
+
+    // Mostramos el modal
+    document.getElementById('confirm-product-name').textContent = productName;
+    document.getElementById('confirm-quantity').textContent = quantity;
+    showConfirmationModal();
 }
 
-function addManualProduct() {
-    const productId = document.getElementById('product-select').value;
-    const quantity = document.getElementById('quantity-input').value;
-    if (!productId) {
-        showResult('Por favor selecciona un producto', 'error');
-        return;
+function showConfirmationModal() {
+    document.getElementById('confirmation-modal').classList.remove('hidden');
+    document.getElementById('confirmation-modal').classList.add('flex');
+}
+
+function hideConfirmationModal() {
+    document.getElementById('confirmation-modal').classList.add('hidden');
+    document.getElementById('confirmation-modal').classList.remove('flex');
+    pendingStockData = null;
+}
+
+async function processConfirmedStock() {
+    if (!pendingStockData) return;
+    
+    hideConfirmationModal();
+
+    if (pendingStockData.mode === 'manual') {
+        await addStockById(pendingStockData.productId, pendingStockData.quantity);
+    } else {
+        await addStockByBarcode(pendingStockData.barcode, pendingStockData.quantity);
     }
-    addStockById(parseInt(productId), parseInt(quantity));
 }
 
 async function addStockByBarcode(barcode, quantity) {
