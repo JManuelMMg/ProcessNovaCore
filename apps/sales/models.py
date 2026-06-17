@@ -186,12 +186,26 @@ class Sale(TenantAwareModel):
 
     def save(self, *args, **kwargs):
         if not self.number:
-            # Usamos timezone.now() porque created_at aún no existe en un INSERT
             from django.utils import timezone as tz
+            from django.db import transaction, IntegrityError
+            
             year = tz.now().year
-            # Conteo seguro: evita race condition usando count + 1
-            count = Sale.objects.filter(organization=self.organization).count() + 1
-            self.number = f'VEN-{year}-{str(count).zfill(6)}'
+            
+            # Generar número con manejo seguro de race conditions
+            max_attempts = 10
+            for attempt in range(max_attempts):
+                try:
+                    with transaction.atomic():
+                        # Contar ventas de la organización
+                        count = Sale.objects.filter(organization=self.organization).count() + 1
+                        self.number = f'VEN-{year}-{str(count).zfill(6)}'
+                        super().save(*args, **kwargs)
+                    return
+                except IntegrityError:
+                    if attempt == max_attempts - 1:
+                        raise
+        
+        # Si el número ya existe, solo guardar
         super().save(*args, **kwargs)
 
     def calculate_total(self):
