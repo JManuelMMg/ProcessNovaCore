@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}POS - ProcessNova{% endblock %}
 {% block content %}
+{% csrf_token %}
 <div class="h-[calc(100vh-4rem)] -m-4 lg:-m-8 bg-slate-100 text-slate-900">
     <div class="flex flex-col lg:flex-row h-full min-h-0">
         <section class="w-full lg:w-2/3 min-w-0 p-3 lg:p-6 overflow-y-auto order-1">
@@ -154,7 +155,21 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="/static/js/pos-offline.js"></script>
 <script>
-const csrfToken = '{{ csrf_token }}';
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrfToken = getCookie('csrftoken');
 let cartItems = [];
 let cartTotals = { subtotal: 0, tax: 0, total: 0 };
 let offlineCart = [];

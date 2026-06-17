@@ -54,6 +54,14 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+else:
+    # For development, allow non-secure cookies
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+
+# CSRF cookie settings for JavaScript access
+CSRF_COOKIE_HTTPONLY = False  # Allow JS to read the CSRF cookie
+CSRF_COOKIE_SAMESITE = 'Lax'  # Default, allows same-site requests
 
 
 # Application definition

@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -113,6 +114,7 @@ def _serialize_cart(sale):
 @login_required
 @tenant_required
 @permission_required('pos')
+@ensure_csrf_cookie
 def pos_view(request):
     products = _products_qs(request).select_related('category')
     from apps.inventory.models import Category
