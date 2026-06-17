@@ -262,27 +262,37 @@ function showConfirmationModal() {
     modal.classList.add('flex');
 }
 
-function hideConfirmationModal() {
+function hideConfirmationModal(clearData = true) {
     const modal = document.getElementById('confirmation-modal');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-    pendingStockData = null;
+    if (clearData) {
+        pendingStockData = null;
+    }
 }
 
 async function processConfirmedStock() {
-    if (!pendingStockData) return;
+    if (!pendingStockData) {
+        showResult('No hay datos de reabastecimiento pendientes', 'error');
+        return;
+    }
     
-    hideConfirmationModal();
+    // Hacer una copia de los datos antes de borrarla
+    const stockData = { ...pendingStockData };
+    
+    hideConfirmationModal(false); // No borrar los datos aún
     showResult('Procesando reabastecimiento...', 'info');
 
     try {
-        let result;
-        if (pendingStockData.mode === 'manual') {
-            result = await addStockById(pendingStockData.productId, pendingStockData.quantity);
+        if (stockData.mode === 'manual') {
+            await addStockById(stockData.productId, stockData.quantity);
         } else {
-            result = await addStockByBarcode(pendingStockData.barcode, pendingStockData.quantity);
+            await addStockByBarcode(stockData.barcode, stockData.quantity);
         }
+        pendingStockData = null; // Borrar solo después de procesar
     } catch (error) {
+        console.error(error);
+        pendingStockData = null; // Borrar incluso si hay error
         showResult('Error al procesar el reabastecimiento: ' + error.message, 'error');
     }
 }
