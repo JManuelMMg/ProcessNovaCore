@@ -7,7 +7,6 @@ from core.permissions import tenant_required
 from django.db.models import Sum, Count
 from datetime import timedelta
 from django.utils import timezone
-from django.utils.html import escape
 from .services import (
     chat_with_ai,
     analizar_inventario_y_sugerir_compras,
@@ -23,36 +22,6 @@ from .services import (
 import json
 
 logger = logging.getLogger(__name__)
-
-
-def sanitize_string(text):
-    """Sanitiza texto para prevenir XSS y ataques."""
-    if text is None:
-        return ""
-    text = str(text).strip()
-    # Limitar longitud para prevenir ataques de flooding
-    if len(text) > 5000:
-        text = text[:5000]
-    return escape(text)
-
-
-def validate_conversation_history(history):
-    """Valida el historial de conversación para seguridad."""
-    if not isinstance(history, list):
-        return []
-    validated = []
-    for item in history:
-        if not isinstance(item, dict):
-            continue
-        role = item.get('role')
-        content = item.get('content')
-        if role not in ['user', 'assistant'] or not isinstance(content, str):
-            continue
-        validated.append({
-            'role': role,
-            'content': sanitize_string(content)
-        })
-    return validated[-20:]  # Limitar a últimos 20 mensajes para seguridad
 
 
 @login_required
@@ -95,10 +64,6 @@ def api_ai_chat(request):
             logger.warning("No se proporcionó mensaje en el chat")
             return JsonResponse({'error': 'No se proporcionó mensaje'}, status=400)
         
-        # Sanitizar y validar entradas
-        user_message = sanitize_string(user_message)
-        conversation_history = validate_conversation_history(conversation_history)
-        
         result = chat_with_ai(
             user_message,
             conversation_history,
@@ -125,7 +90,7 @@ def api_ai_chat(request):
         })
     except Exception as e:
         logger.error(f"Error en chat AI: {str(e)}", exc_info=True)
-        return JsonResponse({'error': 'Ocurrió un error interno. Por favor intenta de nuevo.'}, status=500)
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required

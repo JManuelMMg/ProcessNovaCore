@@ -1,37 +1,5 @@
 from apps.users.models import Membership, Branch
 from django.core.cache import cache
-from django.conf import settings
-
-
-class SecurityHeadersMiddleware:
-    """
-    Middleware para agregar headers de seguridad avanzados.
-    """
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        response = self.get_response(request)
-        
-        # Content Security Policy (CSP) - Aplicada
-        csp = getattr(settings, 'SECURE_CSP', {})
-        if csp:
-            csp_header = '; '.join([f'{key} {value}' for key, value in csp.items()])
-            response['Content-Security-Policy'] = csp_header
-        
-        # X-XSS-Protection (modern browsers use CSP, pero lo agregamos para compatibilidad)
-        response['X-XSS-Protection'] = '1; mode=block'
-        
-        # X-Content-Type-Options
-        response['X-Content-Type-Options'] = 'nosniff'
-        
-        # Permissions-Policy (reemplaza Feature-Policy)
-        response['Permissions-Policy'] = (
-            'geolocation=(), camera=(), microphone=(), payment=(), usb=(), bluetooth=(), '
-            'gyroscope=(), accelerometer=(), magnetometer=()'
-        )
-        
-        return response
 
 
 class TenantMiddleware:
