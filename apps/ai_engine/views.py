@@ -1,8 +1,10 @@
+import logging
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.db.models import Sum
+from core.permissions import tenant_required
+from django.db.models import Sum, Count
 from datetime import timedelta
 from django.utils import timezone
 from .services import (
@@ -19,8 +21,11 @@ from .services import (
 )
 import json
 
+logger = logging.getLogger(__name__)
+
 
 @login_required
+@tenant_required
 def ai_assistant(request):
     """
     Vista principal del asistente AI, pasa el rol del usuario al frontend.
@@ -46,14 +51,17 @@ def ai_assistant(request):
 
 
 @login_required
+@tenant_required
 @require_POST
 def api_ai_chat(request):
     try:
+        logger.info("Iniciando chat con AI")
         data = json.loads(request.body)
         user_message = data.get('message')
         conversation_history = data.get('history', [])
         
         if not user_message:
+            logger.warning("No se proporcionó mensaje en el chat")
             return JsonResponse({'error': 'No se proporcionó mensaje'}, status=400)
         
         result = chat_with_ai(
@@ -66,6 +74,7 @@ def api_ai_chat(request):
         # Si se llamó a una función, verificamos permisos
         if result.get('function_called'):
             if not check_tool_permission(result['function_called'], request.user):
+                logger.warning(f"Usuario {request.user.username} no tiene permisos para {result['function_called']}")
                 return JsonResponse({
                     'error': 'No tienes permisos suficientes para usar esta herramienta.',
                     'response': 'Lo siento, no tienes permisos para realizar este análisis. Por favor contacta a un administrador.',
@@ -73,44 +82,67 @@ def api_ai_chat(request):
                     'tool_result': None
                 }, status=403)
         
+        logger.info("Chat completado exitosamente")
         return JsonResponse({
             'response': result['response'],
             'function_called': result['function_called'],
             'tool_result': result['tool_result']
         })
     except Exception as e:
+        logger.error(f"Error en chat AI: {str(e)}", exc_info=True)
         return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
+@tenant_required
 @require_POST
 def api_analizar_inventario(request):
+    logger.info("Iniciando análisis de inventario")
     # Verificación de permisos
     if not check_tool_permission('analizar_inventario_y_sugerir_compras', request.user):
+        logger.warning(f"Usuario {request.user.username} sin permisos para analizar inventario")
         return JsonResponse({
             'error': 'No tienes permisos suficientes para analizar el inventario'
         }, status=403)
     
     try:
-        from apps.inventory.models import Product
+        from apps.inventory.models import Product, StockMovement
         
         # Filtrar por organización + prefetch para evitar N+1
         productos_db = Product.objects.filter(
             organization=request.organization
         ).prefetch_related('stocks').all()
         
+        today = timezone.localdate()
+        start = today - timedelta(days=30)
+        
         productos = []
         for p in productos_db:
-            # Ahora es una query precargada, no multiple queries
+            # Obtener stock TOTAL EXACTO
             stock_total = sum(s.quantity for s in p.stocks.all())
+            
+            # Obtener VENTAS REALES de los últimos 30 días
+            from apps.sales.models import SaleItem
+            ventas = SaleItem.objects.filter(
+                organization=request.organization,
+                product=p,
+                sale__status='paid',
+                sale__created_at__date__gte=start
+            ).aggregate(total=Sum('quantity'))['total'] or 0
+            ventas = int(ventas)
+            
             productos.append({
                 "id": p.id,
                 "nombre": p.name,
+                "sku": p.sku if hasattr(p, 'sku') else '',
                 "stock_actual": stock_total,
                 "stock_minimo": 10, 
-                "ventas_ultimos_30d": 20,
-                "precio_costo": float(p.cost) if p.cost else 0.0
+                "ventas_ultimos_30d": ventas,
+                "precio_costo": float(p.cost) if p.cost else 0.0,
+                "precio_venta": float(p.price) if hasattr(p, 'price') and p.price else 0.0
             })
+        
+        logger.info(f"Analizando {len(productos)} productos")
         
         if not productos:
             return JsonResponse({
@@ -118,43 +150,73 @@ def api_analizar_inventario(request):
             }, status=404)
         
         resultado = analizar_inventario_y_sugerir_compras(productos)
+        logger.info("Análisis de inventario completado")
         return JsonResponse(resultado)
     except Exception as e:
+        logger.error(f"Error en análisis de inventario: {str(e)}", exc_info=True)
         return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
+@tenant_required
 @require_POST
 def api_analizar_cliente_crm(request):
+    logger.info("Iniciando análisis de CRM")
     # Verificación de permisos
     if not check_tool_permission('analizar_cliente_crm', request.user):
+        logger.warning(f"Usuario {request.user.username} sin permisos para analizar CRM")
         return JsonResponse({
             'error': 'No tienes permisos suficientes para analizar el CRM'
         }, status=403)
     
     try:
         from apps.crm.models import Customer
-        cliente_db = Customer.objects.for_org(request.organization).first()
+        clientes_db = Customer.objects.for_org(request.organization).prefetch_related('interactions', 'sales')
         
-        if not cliente_db:
+        logger.info(f"Encontrados {clientes_db.count()} clientes")
+        
+        if not clientes_db.exists():
             return JsonResponse({
                 'error': 'No hay clientes registrados en tu organización. Agrega clientes al CRM para poder analizarlos.'
             }, status=404)
         
-        cliente = {"id": cliente_db.id, "nombre": cliente_db.name, "email": cliente_db.email}
-        interacciones_db = cliente_db.interactions.all()[:5]
-        interacciones = [
-            {"tipo": i.type, "fecha": i.created_at.strftime("%Y-%m-%d"), "contenido": i.notes or ''}
-            for i in interacciones_db
-        ]
+        clientes = []
+        interacciones_por_cliente = {}
         
-        resultado = analizar_cliente_crm(cliente, interacciones)
+        for cliente_db in clientes_db:
+            # Obtener datos EXACTOS del cliente
+            total_interacciones = cliente_db.interactions.count()
+            total_ventas = cliente_db.sales.filter(status='paid').count()
+            total_gastado = cliente_db.sales.filter(status='paid').aggregate(total=Sum('total'))['total'] or 0
+            
+            clientes.append({
+                "id": cliente_db.id,
+                "nombre": cliente_db.name,
+                "email": cliente_db.email,
+                "telefono": cliente_db.phone if hasattr(cliente_db, 'phone') else '',
+                "total_interacciones": total_interacciones,
+                "total_ventas": total_ventas,
+                "total_gastado": float(total_gastado),
+                "lifetime_value": float(cliente_db.lifetime_value) if cliente_db.lifetime_value else 0,
+            })
+            
+            # Todas las interacciones (no solo 10)
+            interacciones_db = cliente_db.interactions.all()
+            interacciones_por_cliente[cliente_db.id] = [
+                {"tipo": i.type, "fecha": i.created_at.strftime("%Y-%m-%d %H:%M"), "contenido": i.notes or ''}
+                for i in interacciones_db
+            ]
+        
+        resultado = analizar_cliente_crm(clientes, interacciones_por_cliente)
+        logger.info("Análisis de CRM completado exitosamente")
         return JsonResponse(resultado)
     except Exception as e:
+        logger.error(f"Error en análisis de CRM: {str(e)}", exc_info=True)
         return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
+@tenant_required
 @require_POST
 def api_analizar_finanzas(request):
     if not check_tool_permission('analizar_finanzas', request.user):
@@ -186,6 +248,7 @@ def api_analizar_finanzas(request):
 
 
 @login_required
+@tenant_required
 @require_POST
 def api_recomendar_precios(request):
     if not check_tool_permission('recomendar_precios', request.user):
@@ -223,6 +286,7 @@ def api_recomendar_precios(request):
 
 
 @login_required
+@tenant_required
 @require_POST
 def api_analizar_rrhh(request):
     if not check_tool_permission('analizar_rrhh', request.user):
@@ -273,6 +337,7 @@ def api_analizar_rrhh(request):
 
 
 @login_required
+@tenant_required
 @require_POST
 def api_analizar_logistica(request):
     if not check_tool_permission('analizar_logistica', request.user):

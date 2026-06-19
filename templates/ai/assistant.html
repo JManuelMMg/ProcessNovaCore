@@ -3,133 +3,680 @@
 {% block title %}Asistente AI - ProcessNova{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-lg overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                     </svg>
-                    <div>
-                        <h1 class="text-2xl font-bold">Nova - Asistente Operativo</h1>
-                        
-                    </div>
                 </div>
-                <div class="bg-white/20 rounded-lg px-4 py-2">
-                    <p class="text-sm font-semibold">Tu rol: <span class="uppercase">{{ user_role }}</span></p>
+                <div>
+                    <h1 class="text-3xl font-extrabold text-gray-900">Nova - Asistente Operativo</h1>
+                    <p class="text-lg text-gray-600 mt-1">Tu socio inteligente para tomar decisiones basadas en datos</p>
                 </div>
             </div>
-        </div>
-
-        <div id="chat-container" class="h-[450px] overflow-y-auto p-6 space-y-4 bg-gray-50">
-            <div class="flex space-x-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                    N
-                </div>
-                <div class="bg-white rounded-2xl rounded-tl-none p-4 shadow-sm max-w-[80%]">
-                    <p class="text-gray-700">¡Hola! Soy Nova, tu asistente de ProcessNova. 😊</p>
-                    <p class="text-gray-700 mt-2">Puedo ayudarte de dos formas:</p>
-                    <ul class="text-gray-700 text-sm mt-1 list-disc list-inside">
-                        <li>Conversaciones normales: preguntas, ayuda general</li>
-                        <li>Análisis técnico: inventario, CRM y más usando Function Calling</li>
-                    </ul>
-                    <p class="text-gray-700 mt-2">Prueba a saludar o haz click en las acciones rápidas de la derecha!</p>
-                </div>
+            <div class="px-5 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                <p class="text-sm font-semibold text-gray-700">Rol: <span class="text-purple-600 uppercase">{{ user_role }}</span></p>
             </div>
-        </div>
-
-        <div class="p-6 border-t border-gray-200">
-            <form id="chat-form" class="flex space-x-4">
-                <input type="text" id="chat-input" placeholder="Escribe tu mensaje... (ej. 'Hola! ¿Qué puedes hacer?' o 'Analiza el inventario')" 
-                       class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-semibold">
-                    Enviar
-                </button>
-            </form>
         </div>
     </div>
 
-    <div class="space-y-6">
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <h3 class="font-bold text-lg text-gray-800 mb-4 flex items-center space-x-2">
-                <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-                Acciones Rápidas
-            </h3>
-            <div class="space-y-3">
-                {% if can_analyze_inventory %}
-                    <button onclick="ejecutarAccion('inventario')" class="w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition text-blue-800 font-medium">
-                        📦 Analizar Inventario
-                    </button>
-                {% else %}
-                    <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
-                        📦 Analizar Inventario <span class="text-xs">(Solo Dueños/Gerentes)</span>
-                    </div>
-                {% endif %}
-
-                {% if can_recommend_prices %}
-                    <button onclick="ejecutarAccion('precios')" class="w-full text-left px-4 py-3 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition text-emerald-800 font-medium">
-                        $ Recomendar Precios
-                    </button>
-                {% else %}
-                    <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
-                        $ Recomendar Precios <span class="text-xs">(Solo Dueños/Gerentes)</span>
-                    </div>
-                {% endif %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Chat & Results -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Chat Container -->
+            <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        Chat en Vivo
+                    </h2>
+                </div>
                 
-                {% if can_analyze_crm %}
-                    <button onclick="ejecutarAccion('cliente')" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition text-purple-800 font-medium">
-                        👤 Analizar Cliente (CRM)
-                    </button>
-                {% else %}
-                    <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
-                        👤 Analizar Cliente (CRM) <span class="text-xs">(Solo Dueños/Gerentes)</span>
+                <div id="chat-container" class="h-96 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-gray-50 to-white">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 shadow-lg">
+                            N
+                        </div>
+                        <div class="flex-1 bg-white rounded-2xl rounded-tl-none p-5 shadow-sm border border-gray-100">
+                            <p class="text-gray-800 font-medium mb-2">¡Hola! Soy Nova, tu asistente de ProcessNova. 😊</p>
+                            <p class="text-gray-600 mb-3">¿En qué puedo ayudarte hoy? Puedo:</p>
+                            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                                <li class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span>Analizar tu inventario</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span>Revisar tu CRM</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span>Ver tus finanzas</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span>Y mucho más!</span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
-                {% endif %}
+                </div>
+                
+                <div class="p-6 border-t border-gray-100 bg-gray-50">
+                    <form id="chat-form" class="flex space-x-3">
+                        <input type="text" id="chat-input" placeholder="Escribe tu mensaje aquí..." class="flex-1 px-5 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 text-base transition-all">
+                        <button type="submit" class="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl hover:from-indigo-700 hover:to-purple-700 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
 
-                {% if can_analyze_finance %}
-                    <button onclick="ejecutarAccion('finanzas')" class="w-full text-left px-4 py-3 bg-amber-50 hover:bg-amber-100 rounded-lg transition text-amber-800 font-medium">
-                        Finanzas: Flujo y Margen
-                    </button>
-                {% else %}
-                    <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
-                        Finanzas <span class="text-xs">(Solo Dueños/Gerentes)</span>
-                    </div>
-                {% endif %}
-
-                {% if can_analyze_hr %}
-                    <button onclick="ejecutarAccion('rrhh')" class="w-full text-left px-4 py-3 bg-rose-50 hover:bg-rose-100 rounded-lg transition text-rose-800 font-medium">
-                        RRHH: Asistencia y Nomina
-                    </button>
-                {% else %}
-                    <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
-                        RRHH <span class="text-xs">(Solo Admin)</span>
-                    </div>
-                {% endif %}
-
-                {% if can_analyze_logistics %}
-                    <button onclick="ejecutarAccion('logistica')" class="w-full text-left px-4 py-3 bg-cyan-50 hover:bg-cyan-100 rounded-lg transition text-cyan-800 font-medium">
-                        Logistica: Envios y Rutas
-                    </button>
-                {% else %}
-                    <div class="w-full text-left px-4 py-3 bg-gray-100 rounded-lg text-gray-500 cursor-not-allowed">
-                        Logistica <span class="text-xs">(Solo Dueños/Gerentes)</span>
-                    </div>
-                {% endif %}
+            <!-- Results Panel -->
+            <div id="results-panel" class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 hidden">
+                <div class="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        Resultados del Análisis
+                    </h3>
+                </div>
+                <div id="results-content" class="p-6"></div>
             </div>
         </div>
 
-        <div id="resultados-ai" class="bg-white rounded-xl shadow-lg p-6 hidden">
-            <h3 class="font-bold text-lg text-gray-800 mb-4">📊 Resultados de Análisis</h3>
-            <div id="contenido-resultados"></div>
+        <!-- Quick Actions -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+                <div class="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Acciones Rápidas
+                    </h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    {% if can_analyze_inventory %}
+                        <button onclick="executeQuickAction('inventario')" class="w-full flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-2xl border border-blue-100 transition-all group">
+                            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-xl">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-800 group-hover:text-indigo-700">Analizar Inventario</p>
+                                <p class="text-sm text-gray-500">Revisa stock y sugerencias</p>
+                            </div>
+                        </button>
+                    {% else %}
+                        <div class="w-full flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl border border-gray-200 cursor-not-allowed">
+                            <div class="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center text-gray-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-400">Analizar Inventario</p>
+                                <p class="text-xs text-gray-400">Solo Dueños/Gerentes</p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if can_analyze_crm %}
+                        <button onclick="executeQuickAction('cliente')" class="w-full flex items-center space-x-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-2xl border border-purple-100 transition-all group">
+                            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-xl">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-800 group-hover:text-purple-700">Analizar CRM</p>
+                                <p class="text-sm text-gray-500">Revisa clientes y sentimientos</p>
+                            </div>
+                        </button>
+                    {% else %}
+                        <div class="w-full flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl border border-gray-200 cursor-not-allowed">
+                            <div class="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center text-gray-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-400">Analizar CRM</p>
+                                <p class="text-xs text-gray-400">Solo Dueños/Gerentes</p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if can_analyze_finance %}
+                        <button onclick="executeQuickAction('finanzas')" class="w-full flex items-center space-x-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 rounded-2xl border border-amber-100 transition-all group">
+                            <div class="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-xl">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-800 group-hover:text-amber-700">Analizar Finanzas</p>
+                                <p class="text-sm text-gray-500">Ingresos, gastos y utilidad</p>
+                            </div>
+                        </button>
+                    {% else %}
+                        <div class="w-full flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl border border-gray-200 cursor-not-allowed">
+                            <div class="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center text-gray-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-400">Analizar Finanzas</p>
+                                <p class="text-xs text-gray-400">Solo Dueños/Gerentes</p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if can_analyze_hr %}
+                        <button onclick="executeQuickAction('rrhh')" class="w-full flex items-center space-x-4 p-4 bg-gradient-to-r from-rose-50 to-red-50 hover:from-rose-100 hover:to-red-100 rounded-2xl border border-rose-100 transition-all group">
+                            <div class="w-12 h-12 bg-gradient-to-r from-rose-500 to-red-600 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-xl">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-800 group-hover:text-rose-700">Analizar RRHH</p>
+                                <p class="text-sm text-gray-500">Personal, asistencia y nómina</p>
+                            </div>
+                        </button>
+                    {% else %}
+                        <div class="w-full flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl border border-gray-200 cursor-not-allowed">
+                            <div class="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center text-gray-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-400">Analizar RRHH</p>
+                                <p class="text-xs text-gray-400">Solo Admin</p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if can_analyze_logistics %}
+                        <button onclick="executeQuickAction('logistica')" class="w-full flex items-center space-x-4 p-4 bg-gradient-to-r from-cyan-50 to-teal-50 hover:from-cyan-100 hover:to-teal-100 rounded-2xl border border-cyan-100 transition-all group">
+                            <div class="w-12 h-12 bg-gradient-to-r from-cyan-500 to-teal-600 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-xl">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m-9 3h16"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-800 group-hover:text-cyan-700">Analizar Logística</p>
+                                <p class="text-sm text-gray-500">Pedidos, envíos y rutas</p>
+                            </div>
+                        </button>
+                    {% else %}
+                        <div class="w-full flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl border border-gray-200 cursor-not-allowed">
+                            <div class="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center text-gray-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m-9 3h16"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-400">Analizar Logística</p>
+                                <p class="text-xs text-gray-400">Solo Dueños/Gerentes</p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if can_recommend_prices %}
+                        <button onclick="executeQuickAction('precios')" class="w-full flex items-center space-x-4 p-4 bg-gradient-to-r from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 rounded-2xl border border-emerald-100 transition-all group">
+                            <div class="w-12 h-12 bg-gradient-to-r from-emerald-500 to-green-600 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-xl">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-800 group-hover:text-emerald-700">Recomendar Precios</p>
+                                <p class="text-sm text-gray-500">Mejora tu estrategia de precios</p>
+                            </div>
+                        </button>
+                    {% else %}
+                        <div class="w-full flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl border border-gray-200 cursor-not-allowed">
+                            <div class="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center text-gray-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="font-semibold text-gray-400">Recomendar Precios</p>
+                                <p class="text-xs text-gray-400">Solo Dueños/Gerentes</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
 let conversationHistory = [];
+
+function addMessage(text, sender) {
+    const container = document.getElementById('chat-container');
+    const div = document.createElement('div');
+    div.className = `flex items-start space-x-3 ${sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`;
+    
+    const avatar = document.createElement('div');
+    avatar.className = `w-10 h-10 ${sender === 'user' ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600'} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 shadow-lg`;
+    avatar.textContent = sender === 'user' ? 'T' : 'N';
+    
+    const bubble = document.createElement('div');
+    bubble.className = `${sender === 'user' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl rounded-tr-none' : 'bg-white rounded-2xl rounded-tl-none border border-gray-100 text-gray-800'} p-5 shadow-sm max-w-md`;
+    bubble.textContent = text;
+    
+    div.appendChild(avatar);
+    div.appendChild(bubble);
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function addTypingIndicator() {
+    const container = document.getElementById('chat-container');
+    const id = 'typing-' + Date.now();
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'flex items-start space-x-3';
+    div.innerHTML = `
+        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 shadow-lg">
+            N
+        </div>
+        <div class="bg-white rounded-2xl rounded-tl-none p-5 shadow-sm border border-gray-100 flex space-x-2">
+            <div class="w-3 h-3 bg-indigo-400 rounded-full animate-bounce"></div>
+            <div class="w-3 h-3 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+            <div class="w-3 h-3 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+        </div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return id;
+}
+
+function removeTypingIndicator(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showResults(data, type) {
+    const panel = document.getElementById('results-panel');
+    const content = document.getElementById('results-content');
+    panel.classList.remove('hidden');
+    
+    let html = '';
+    
+    if (type === 'cliente' || type === 'analizar_cliente_crm') {
+        const sentimientoClass = {
+            'positivo': 'text-green-700 bg-green-100 border-green-300',
+            'negativo': 'text-red-700 bg-red-100 border-red-300',
+            'neutral': 'text-gray-700 bg-gray-100 border-gray-300'
+        };
+        
+        html = `
+            <div class="mb-6 p-6 rounded-2xl ${sentimientoClass[data.sentimiento_general_global]} border-2">
+                <h4 class="text-xl font-bold mb-3">📊 Resumen General</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-gray-800">${data.total_clientes}</p>
+                        <p class="text-sm text-gray-600">Clientes</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-gray-800">${data.total_interacciones}</p>
+                        <p class="text-sm text-gray-600">Interacciones</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-green-700">${data.total_ventas}</p>
+                        <p class="text-sm text-gray-600">Ventas</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-indigo-700">$${data.total_gastado.toLocaleString()}</p>
+                        <p class="text-sm text-gray-600">Total Gastado</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <span class="px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm font-medium">${data.conteo_sentimiento_global.positivo} Positivas</span>
+                    <span class="px-3 py-1 bg-red-200 text-red-800 rounded-full text-sm font-medium">${data.conteo_sentimiento_global.negativo} Negativas</span>
+                    <span class="px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-sm font-medium">${data.conteo_sentimiento_global.neutral} Neutrales</span>
+                </div>
+            </div>
+            
+            <h4 class="text-lg font-bold text-gray-800 mb-4">Clientes Detallados</h4>
+            <div class="space-y-4 max-h-96 overflow-y-auto">
+                ${data.resumen_por_cliente.map(cliente => `
+                    <div class="p-5 rounded-2xl border ${cliente.sentimiento_general === 'negativo' ? 'border-red-200 bg-red-50' : cliente.sentimiento_general === 'positivo' ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <p class="font-bold text-lg text-gray-900">${cliente.cliente_nombre}</p>
+                                <p class="text-sm text-gray-600">${cliente.cliente_email}${cliente.cliente_telefono ? ' • ' + cliente.cliente_telefono : ''}</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${cliente.sentimiento_general === 'positivo' ? 'bg-green-200 text-green-800' : cliente.sentimiento_general === 'negativo' ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-800'}">
+                                ${cliente.sentimiento_general.toUpperCase()}
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-3 mb-3">
+                            <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                <p class="text-sm font-semibold text-gray-800">${cliente.total_interacciones}</p>
+                                <p class="text-xs text-gray-600">Interacciones</p>
+                            </div>
+                            <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                <p class="text-sm font-semibold text-gray-800">${cliente.total_ventas}</p>
+                                <p class="text-xs text-gray-600">Compras</p>
+                            </div>
+                            <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                <p class="text-sm font-semibold text-indigo-700">$${cliente.total_gastado.toLocaleString()}</p>
+                                <p class="text-xs text-gray-600">Gastado</p>
+                            </div>
+                        </div>
+                        
+                        ${cliente.puntos_clave.length > 0 ? `
+                            <div class="mt-3 pt-3 border-t ${cliente.sentimiento_general === 'negativo' ? 'border-red-200' : cliente.sentimiento_general === 'positivo' ? 'border-green-200' : 'border-gray-200'}">
+                                <p class="text-xs font-semibold text-gray-700 mb-2">Últimas Interacciones:</p>
+                                <ul class="text-xs text-gray-600 space-y-1">
+                                    ${cliente.puntos_clave.map(p => `<li>${p}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="mt-3 pt-3 border-t ${cliente.sentimiento_general === 'negativo' ? 'border-red-200' : cliente.sentimiento_general === 'positivo' ? 'border-green-200' : 'border-gray-200'}">
+                            <p class="text-xs font-semibold text-gray-700 mb-1">Recomendación:</p>
+                            <p class="text-xs text-gray-600 bg-white p-2 rounded-lg">${cliente.recomendacion}</p>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div class="mt-6 p-5 bg-blue-50 rounded-2xl border border-blue-200">
+                <h5 class="font-bold text-blue-800 mb-2">💡 Recomendaciones Generales:</h5>
+                <ul class="space-y-2">
+                    ${data.recomendaciones_generales.map(r => `<li class="text-sm text-blue-700 list-disc list-inside">${r}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    } else if (type === 'inventario' || type === 'analizar_inventario_y_sugerir_compras') {
+        html = `
+            <div class="mb-6 p-6 rounded-2xl ${data.alerta_general ? 'bg-red-50 border-2 border-red-300' : 'bg-green-50 border-2 border-green-300'}">
+                <h4 class="text-xl font-bold ${data.alerta_general ? 'text-red-800' : 'text-green-800'} mb-3">
+                    ${data.alerta_general ? '⚠️ ¡Alerta General!' : '✅ Todo está en orden'}
+                </h4>
+                <p class="text-gray-600 mb-3">${data.productos_con_alerta} productos con stock crítico</p>
+                <div class="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm">
+                    <p class="text-gray-700">Total Analizado</p>
+                    <p class="text-2xl font-bold text-indigo-700">${data.total_productos_analizados}</p>
+                </div>
+                <div class="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm mt-2">
+                    <p class="text-gray-700">Costo Total Estimado</p>
+                    <p class="text-2xl font-bold text-green-700">$${data.costo_total_estimado.toLocaleString()}</p>
+                </div>
+            </div>
+            
+            <h4 class="text-lg font-bold text-gray-800 mb-4">Sugerencias de Compra</h4>
+            <div class="space-y-4 max-h-96 overflow-y-auto">
+                ${data.sugerencias_compras.map(s => `
+                    <div class="p-5 rounded-2xl border ${s.alerta ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <p class="font-bold text-lg text-gray-900">${s.producto_nombre}</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${s.alerta ? 'bg-red-200 text-red-80' : s.prioridad === 'media' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}"">
+                                ${s.prioridad.toUpperCase()}
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                <p class="text-xs text-gray-600">Stock Actual</p>
+                                <p class="text-lg font-bold text-gray-800">${s.stock_actual}</p>
+                            </div>
+                            <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                <p class="text-xs text-gray-600">Mínimo</p>
+                                <p class="text-lg font-bold text-gray-800">${s.stock_minimo}</p>
+                            </div>
+                        </div>
+                        ${s.cantidad_sugerida > 0 ? `
+                            <div class="pt-3 border-t border-gray-200">
+                                <p class="text-sm font-semibold text-gray-800 mb-1">Sugerencia: comprar ${s.cantidad_sugerida} unidades</p>
+                                <p class="text-sm text-gray-600">Costo total: $${s.costo_total.toLocaleString()}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else if (type === 'precios' || type === 'recomendar_precios') {
+        html = `
+            <div class="mb-6">
+                <h4 class="text-lg font-bold text-gray-800 mb-4">${data.total_productos} productos evaluados</h4>
+                <div class="space-y-4 max-h-96 overflow-y-auto">
+                    ${data.recomendaciones.map(r => `
+                        <div class="p-5 rounded-2xl border border-green-200 bg-green-50">
+                            <p class="font-bold text-lg text-gray-900 mb-3">${r.producto_nombre}</p>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                    <p class="text-xs text-gray-600">Actual</p>
+                                    <p class="text-lg font-bold text-gray-800">$${r.precio_actual.toLocaleString()}</p>
+                                </div>
+                                <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                    <p class="text-xs text-gray-600">Costo</p>
+                                    <p class="text-lg font-bold text-gray-800">$${r.precio_costo.toLocaleString()}</p>
+                                </div>
+                                <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                    <p class="text-xs text-gray-600">Sugerido</p>
+                                    <p class="text-lg font-bold text-green-700">$${r.precio_sugerido.toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-3 bg-white p-3 rounded-xl">${r.justificacion}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } else if (type === 'finanzas' || type === 'analizar_finanzas') {
+        html = `
+            <div class="mb-6 p-6 rounded-2xl ${data.alerta ? 'bg-red-50 border-2 border-red-300' : 'bg-green-50 border-2 border-green-300'}">
+                <h4 class="text-xl font-bold ${data.alerta ? 'text-red-800' : 'text-green-800'} mb-3">
+                    ${data.alerta ? '⚠️ Atención financiera requerida' : '✅ Finanzas estables'}
+                </h4>
+                <p class="text-sm text-gray-600 mb-4">Período: ${data.periodo.inicio} - ${data.periodo.fin}</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-green-700">$${data.resumen.total_ingresos.toLocaleString()}</p>
+                        <p class="text-sm text-gray-600">Ingresos</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-red-700">$${data.resumen.total_gastos.toLocaleString()}</p>
+                        <p class="text-sm text-gray-600">Gastos</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-blue-700">$${data.resumen.utilidad.toLocaleString()}</p>
+                        <p class="text-sm text-gray-600">Utilidad</p>
+                    </div>
+                </div>
+                <p class="text-center mt-4 text-lg font-bold text-indigo-700">Margen: ${data.resumen.margen_porcentaje}%</p>
+            </div>
+            
+            <div class="mt-6 p-5 bg-blue-50 rounded-2xl border border-blue-200">
+                <h5 class="font-bold text-blue-800 mb-2">💡 Recomendaciones:</h5>
+                <ul class="space-y-2">
+                    ${data.recomendaciones.map(r => `<li class="text-sm text-blue-700 list-disc list-inside">${r}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    } else if (type === 'rrhh' || type === 'analizar_rrhh') {
+        html = `
+            <div class="mb-6 p-6 rounded-2xl ${data.alerta ? 'bg-amber-50 border-2 border-amber-300' : 'bg-green-50 border-2 border-green-300'}">
+                <h4 class="text-xl font-bold ${data.alerta ? 'text-amber-800' : 'text-green-800'} mb-3">
+                    ${data.alerta ? '⚠️ RRHH requiere atención' : '✅ RRHH sin alertas críticas'}
+                </h4>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-blue-800">${data.resumen.empleados_activos}</p>
+                        <p class="text-sm text-gray-600">Activos</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-slate-800">${data.resumen.total_empleados}</p>
+                        <p class="text-sm text-gray-600">Total</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-red-800">${data.asistencia.ausencias}</p>
+                        <p class="text-sm text-gray-600">Ausencias</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-amber-800">${data.permisos.pendientes}</p>
+                        <p class="text-sm text-gray-600">Permisos Pendientes</p>
+                    </div>
+                </div>
+                <p class="text-center font-bold text-indigo-700 mb-3">Nómina Neta: $${data.resumen.nomina_neta_periodo.toLocaleString()}</p>
+            </div>
+            
+            <div class="mt-6 p-5 bg-blue-50 rounded-2xl border border-blue-200">
+                <h5 class="font-bold text-blue-800 mb-2">💡 Recomendaciones:</h5>
+                <ul class="space-y-2">
+                    ${data.recomendaciones.map(r => `<li class="text-sm text-blue-700 list-disc list-inside">${r}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    } else if (type === 'logistica' || type === 'analizar_logistica') {
+        html = `
+            <div class="mb-6 p-6 rounded-2xl ${data.alerta ? 'bg-amber-50 border-2 border-amber-300' : 'bg-green-50 border-2 border-green-300'}">
+                <h4 class="text-xl font-bold ${data.alerta ? 'text-amber-800' : 'text-green-800'} mb-3">
+                    ${data.alerta ? '⚠️ Logística requiere seguimiento' : '✅ Operación logística estable'}
+                </h4>
+                <p class="text-sm text-gray-600 mb-4">${data.pedidos_pendientes} pedidos pendientes, ${data.resumen.envios_fallidos} envíos fallidos</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-cyan-800">${data.resumen.total_envios}</p>
+                        <p class="text-sm text-gray-600">Envíos</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-blue-800">${data.resumen.envios_en_transito}</p>
+                        <p class="text-sm text-gray-600">En Tránsito</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-red-800">${data.resumen.envios_fallidos}</p>
+                        <p class="text-sm text-gray-600">Fallidos</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-gray-800">$${data.resumen.costo_promedio_envio.toLocaleString()}</p>
+                        <p class="text-sm text-gray-600">Costo Promedio</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 p-5 bg-blue-50 rounded-2xl border border-blue-200">
+                <h5 class="font-bold text-blue-800 mb-2">💡 Recomendaciones:</h5>
+                <ul class="space-y-2">
+                    ${data.recomendaciones.map(r => `<li class="text-sm text-blue-700 list-disc list-inside">${r}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = html;
+}
+
+async function executeQuickAction(type) {
+    let endpoint = '';
+    let message = '';
+    
+    if (type === 'inventario') {
+        endpoint = '{% url "ai_engine:api_analizar_inventario" %}';
+        message = 'Analizando tu inventario...';
+    } else if (type === 'precios') {
+        endpoint = '{% url "ai_engine:api_recomendar_precios" %}';
+        message = 'Calculando recomendaciones de precios...';
+    } else if (type === 'cliente') {
+        endpoint = '{% url "ai_engine:api_analizar_cliente_crm" %}';
+        message = 'Analizando tu CRM y clientes...';
+    } else if (type === 'finanzas') {
+        endpoint = '{% url "ai_engine:api_analizar_finanzas" %}';
+        message = 'Analizando tus finanzas...';
+    } else if (type === 'rrhh') {
+        endpoint = '{% url "ai_engine:api_analizar_rrhh" %}';
+        message = 'Analizando RRHH, asistencia y nómina...';
+    } else if (type === 'logistica') {
+        endpoint = '{% url "ai_engine:api_analizar_logistica" %}';
+        message = 'Analizando pedidos, envíos y rutas...';
+    }
+    
+    addMessage(message, 'ai');
+    const typingId = addTypingIndicator();
+    
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({})
+        });
+        
+        const data = await response.json();
+        removeTypingIndicator(typingId);
+        
+        if (data.error) {
+            addMessage('Error: ' + data.error, 'ai');
+        } else {
+            addMessage('¡Listo! He completado el análisis de ' + getModuleName(type) + '. Los resultados están en el panel inferior.', 'ai');
+            showResults(data, type);
+        }
+    } catch (error) {
+        removeTypingIndicator(typingId);
+        addMessage('Lo siento, hubo un error al ejecutar la acción.', 'ai');
+        console.error(error);
+    }
+}
+
+function getModuleName(type) {
+    return {
+        inventario: 'inventario',
+        precios: 'precios',
+        cliente: 'CRM',
+        finanzas: 'finanzas',
+        rrhh: 'RRHH',
+        logistica: 'logística'
+    }[type] || type;
+}
 
 document.getElementById('chat-form').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -166,7 +713,7 @@ document.getElementById('chat-form').addEventListener('submit', async function(e
             conversationHistory.push({ role: 'assistant', content: data.response });
             
             if (data.tool_result) {
-                mostrarResultados(data.function_called, data.tool_result);
+                showResults(data.tool_result, data.function_called);
             }
         } else if (data.error) {
             addMessage('Lo siento, ha ocurrido un error: ' + data.error, 'ai');
@@ -176,329 +723,5 @@ document.getElementById('chat-form').addEventListener('submit', async function(e
         addMessage('Lo siento, no puedo conectarme en este momento. Por favor, intenta de nuevo.', 'ai');
     }
 });
-
-async function ejecutarAccion(tipo) {
-    let endpoint = '';
-    let mensaje = '';
-    
-    if (tipo === 'inventario') {
-        endpoint = '{% url "ai_engine:api_analizar_inventario" %}';
-        mensaje = 'Analizando inventario...';
-    } else if (tipo === 'precios') {
-        endpoint = '{% url "ai_engine:api_recomendar_precios" %}';
-        mensaje = 'Calculando recomendaciones de precios...';
-    } else if (tipo === 'cliente') {
-        endpoint = '{% url "ai_engine:api_analizar_cliente_crm" %}';
-        mensaje = 'Analizando cliente CRM...';
-    } else if (tipo === 'finanzas') {
-        endpoint = '{% url "ai_engine:api_analizar_finanzas" %}';
-        mensaje = 'Analizando finanzas de los ultimos 30 dias...';
-    } else if (tipo === 'rrhh') {
-        endpoint = '{% url "ai_engine:api_analizar_rrhh" %}';
-        mensaje = 'Analizando RRHH, asistencia y nomina...';
-    } else if (tipo === 'logistica') {
-        endpoint = '{% url "ai_engine:api_analizar_logistica" %}';
-        mensaje = 'Analizando envios, pedidos y rutas...';
-    }
-    
-    addMessage(mensaje, 'ai');
-    const typingId = addTypingIndicator();
-    
-    try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({})
-        });
-        
-        const data = await response.json();
-        removeTypingIndicator(typingId);
-        
-        if (data.error) {
-            addMessage('Error: ' + data.error, 'ai');
-            return;
-        }
-        
-        mostrarResultados(tipo, data);
-        addMessage(`He completado el analisis de ${nombreModulo(tipo)}. Los resultados estan en el panel lateral.`, 'ai');
-        
-    } catch (error) {
-        removeTypingIndicator(typingId);
-        addMessage('Lo siento, hubo un error al ejecutar la acción.', 'ai');
-    }
-}
-
-function nombreModulo(tipo) {
-    return {
-        inventario: 'inventario',
-        precios: 'precios',
-        cliente: 'CRM',
-        finanzas: 'finanzas',
-        rrhh: 'RRHH',
-        logistica: 'logistica'
-    }[tipo] || tipo;
-}
-
-function mostrarResultados(tipo, datos) {
-    const panel = document.getElementById('resultados-ai');
-    const contenido = document.getElementById('contenido-resultados');
-    panel.classList.remove('hidden');
-    
-    let html = '';
-    
-    if (tipo === 'inventario' || tipo === 'analizar_inventario_y_sugerir_compras') {
-        html = `
-            <div class="${datos.alerta_general ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'} rounded-lg p-4 mb-4">
-                <p class="font-semibold ${datos.alerta_general ? 'text-red-800' : 'text-green-800'}">
-                    ${datos.alerta_general ? '⚠️ ¡ALERTA GENERAL!' : '✅ Todo está en orden'}
-                </p>
-                <p class="text-sm ${datos.alerta_general ? 'text-red-700' : 'text-green-700'}">
-                    ${datos.productos_con_alerta} productos con alerta de stock crítico.
-                </p>
-            </div>
-            <p class="text-sm text-gray-600 mb-3">Total analizado: ${datos.total_productos_analizados} productos</p>
-            <p class="text-lg font-bold text-gray-800 mb-4">Costo total estimado: $${datos.costo_total_estimado.toLocaleString()}</p>
-            <div class="space-y-3">
-                ${datos.sugerencias_compras.map(s => `
-                    <div class="border rounded-lg p-4 ${s.alerta ? 'border-red-300 bg-red-50' : 'border-gray-200'}">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-semibold text-gray-900">${s.producto_nombre}</p>
-                                <p class="text-sm text-gray-600">Stock: ${s.stock_actual} / Mínimo: ${s.stock_minimo}</p>
-                            </div>
-                            <span class="px-2 py-1 text-xs rounded-full font-medium ${s.alerta ? 'bg-red-200 text-red-800' : s.prioridad === 'media' ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'}">
-                                ${s.prioridad.toUpperCase()}
-                            </span>
-                        </div>
-                        ${s.cantidad_sugerida > 0 ? `
-                            <div class="mt-3 pt-3 border-t border-gray-200">
-                                <p class="text-sm"><strong>Sugerencia:</strong> Comprar ${s.cantidad_sugerida} unidades</p>
-                                <p class="text-sm text-gray-600">Costo: $${s.costo_total.toLocaleString()}</p>
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    } else if (tipo === 'cliente' || tipo === 'analizar_cliente_crm') {
-        const sentimientoColor = {
-            'positivo': 'text-green-600 bg-green-100',
-            'negativo': 'text-red-600 bg-red-100',
-            'neutral': 'text-gray-600 bg-gray-100'
-        };
-        html = `
-            <div class="mb-4">
-                <p class="font-semibold text-lg">${datos.cliente_nombre}</p>
-                <p class="text-sm text-gray-600">${datos.cliente_email}</p>
-            </div>
-            <div class="flex items-center space-x-2 mb-4">
-                <span class="text-sm font-semibold">Sentimiento:</span>
-                <span class="px-3 py-1 rounded-full text-sm font-medium ${sentimientoColor[datos.sentimiento_general]}">
-                    ${datos.sentimiento_general.toUpperCase()}
-                </span>
-            </div>
-            <div class="grid grid-cols-3 gap-3 mb-4">
-                <div class="text-center p-3 bg-blue-50 rounded-lg">
-                    <p class="text-lg font-bold text-blue-800">${datos.total_interacciones}</p>
-                    <p class="text-xs text-blue-600">Interacciones</p>
-                </div>
-                <div class="text-center p-3 bg-green-50 rounded-lg">
-                    <p class="text-lg font-bold text-green-800">${datos.conteo_sentimiento.positivo}</p>
-                    <p class="text-xs text-green-600">Positivas</p>
-                </div>
-                <div class="text-center p-3 bg-red-50 rounded-lg">
-                    <p class="text-lg font-bold text-red-800">${datos.conteo_sentimiento.negativo}</p>
-                    <p class="text-xs text-red-600">Negativas</p>
-                </div>
-            </div>
-            <div class="mt-4">
-                <p class="font-semibold text-gray-800 mb-2">Recomendaciones:</p>
-                <ul class="list-disc list-inside text-sm text-gray-700">
-                    ${datos.recomendaciones.map(r => `<li>${r}</li>`).join('')}
-                </ul>
-            </div>
-        `;
-    } else if (tipo === 'precios' || tipo === 'recomendar_precios') {
-        html = `
-            <p class="text-sm text-gray-600 mb-3">Productos evaluados: ${datos.total_productos}</p>
-            <div class="space-y-3">
-                ${datos.recomendaciones.map(r => `
-                    <div class="border border-emerald-200 bg-emerald-50 rounded-lg p-4">
-                        <p class="font-semibold text-gray-900">${r.producto_nombre}</p>
-                        <div class="grid grid-cols-2 gap-2 mt-3 text-sm">
-                            <div class="bg-white rounded p-2">
-                                <p class="text-gray-500">Actual</p>
-                                <p class="font-bold">$${r.precio_actual.toLocaleString()}</p>
-                            </div>
-                            <div class="bg-white rounded p-2">
-                                <p class="text-gray-500">Sugerido</p>
-                                <p class="font-bold text-emerald-700">$${r.precio_sugerido.toLocaleString()}</p>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-600 mt-3">${r.justificacion}</p>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    } else if (tipo === 'finanzas' || tipo === 'analizar_finanzas') {
-        html = `
-            <div class="${datos.alerta ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'} border rounded-lg p-4 mb-4">
-                <p class="font-semibold ${datos.alerta ? 'text-red-800' : 'text-green-800'}">
-                    ${datos.alerta ? 'Atencion financiera requerida' : 'Finanzas estables'}
-                </p>
-                <p class="text-sm ${datos.alerta ? 'text-red-700' : 'text-green-700'}">
-                    Margen: ${datos.resumen.margen_porcentaje}%
-                </p>
-            </div>
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div class="p-3 bg-green-50 rounded-lg">
-                    <p class="text-xs text-green-700">Ingresos</p>
-                    <p class="text-lg font-bold text-green-800">$${datos.resumen.total_ingresos.toLocaleString()}</p>
-                </div>
-                <div class="p-3 bg-red-50 rounded-lg">
-                    <p class="text-xs text-red-700">Gastos</p>
-                    <p class="text-lg font-bold text-red-800">$${datos.resumen.total_gastos.toLocaleString()}</p>
-                </div>
-                <div class="p-3 bg-blue-50 rounded-lg col-span-2">
-                    <p class="text-xs text-blue-700">Utilidad</p>
-                    <p class="text-lg font-bold text-blue-800">$${datos.resumen.utilidad.toLocaleString()}</p>
-                </div>
-            </div>
-            <p class="font-semibold text-gray-800 mb-2">Recomendaciones:</p>
-            <ul class="list-disc list-inside text-sm text-gray-700">
-                ${datos.recomendaciones.map(r => `<li>${r}</li>`).join('')}
-            </ul>
-        `;
-    } else if (tipo === 'rrhh' || tipo === 'analizar_rrhh') {
-        html = `
-            <div class="${datos.alerta ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'} border rounded-lg p-4 mb-4">
-                <p class="font-semibold ${datos.alerta ? 'text-amber-800' : 'text-green-800'}">
-                    ${datos.alerta ? 'Hay pendientes de RRHH' : 'RRHH sin alertas criticas'}
-                </p>
-            </div>
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div class="p-3 bg-blue-50 rounded-lg">
-                    <p class="text-xs text-blue-700">Activos</p>
-                    <p class="text-lg font-bold text-blue-800">${datos.resumen.empleados_activos}</p>
-                </div>
-                <div class="p-3 bg-slate-50 rounded-lg">
-                    <p class="text-xs text-slate-700">Total</p>
-                    <p class="text-lg font-bold text-slate-800">${datos.resumen.total_empleados}</p>
-                </div>
-                <div class="p-3 bg-rose-50 rounded-lg">
-                    <p class="text-xs text-rose-700">Ausencias</p>
-                    <p class="text-lg font-bold text-rose-800">${datos.asistencia.ausencias}</p>
-                </div>
-                <div class="p-3 bg-amber-50 rounded-lg">
-                    <p class="text-xs text-amber-700">Permisos pendientes</p>
-                    <p class="text-lg font-bold text-amber-800">${datos.permisos.pendientes}</p>
-                </div>
-            </div>
-            <p class="text-sm text-gray-600 mb-3">Nomina neta periodo: <strong>$${datos.resumen.nomina_neta_periodo.toLocaleString()}</strong></p>
-            <p class="font-semibold text-gray-800 mb-2">Recomendaciones:</p>
-            <ul class="list-disc list-inside text-sm text-gray-700">
-                ${datos.recomendaciones.map(r => `<li>${r}</li>`).join('')}
-            </ul>
-        `;
-    } else if (tipo === 'logistica' || tipo === 'analizar_logistica') {
-        html = `
-            <div class="${datos.alerta ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'} border rounded-lg p-4 mb-4">
-                <p class="font-semibold ${datos.alerta ? 'text-amber-800' : 'text-green-800'}">
-                    ${datos.alerta ? 'Logistica requiere seguimiento' : 'Operacion logistica estable'}
-                </p>
-                <p class="text-sm ${datos.alerta ? 'text-amber-700' : 'text-green-700'}">
-                    ${datos.pedidos_pendientes} pedidos pendientes, ${datos.resumen.envios_fallidos} envios fallidos.
-                </p>
-            </div>
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div class="p-3 bg-cyan-50 rounded-lg">
-                    <p class="text-xs text-cyan-700">Envios</p>
-                    <p class="text-lg font-bold text-cyan-800">${datos.resumen.total_envios}</p>
-                </div>
-                <div class="p-3 bg-blue-50 rounded-lg">
-                    <p class="text-xs text-blue-700">En transito</p>
-                    <p class="text-lg font-bold text-blue-800">${datos.resumen.envios_en_transito}</p>
-                </div>
-                <div class="p-3 bg-red-50 rounded-lg">
-                    <p class="text-xs text-red-700">Fallidos</p>
-                    <p class="text-lg font-bold text-red-800">${datos.resumen.envios_fallidos}</p>
-                </div>
-                <div class="p-3 bg-slate-50 rounded-lg">
-                    <p class="text-xs text-slate-700">Costo promedio</p>
-                    <p class="text-lg font-bold text-slate-800">$${datos.resumen.costo_promedio_envio.toLocaleString()}</p>
-                </div>
-            </div>
-            <p class="font-semibold text-gray-800 mb-2">Recomendaciones:</p>
-            <ul class="list-disc list-inside text-sm text-gray-700">
-                ${datos.recomendaciones.map(r => `<li>${r}</li>`).join('')}
-            </ul>
-        `;
-    }
-    
-    contenido.innerHTML = html;
-}
-
-function addMessage(text, sender) {
-    const container = document.getElementById('chat-container');
-    const div = document.createElement('div');
-    div.className = 'flex space-x-3' + (sender === 'user' ? ' flex-row-reverse' : '');
-    
-    const avatar = document.createElement('div');
-    avatar.className = 'w-10 h-10 ' + (sender === 'user' ? 'bg-green-600' : 'bg-gradient-to-br from-blue-600 to-indigo-600') + ' rounded-full flex items-center justify-center text-white font-bold flex-shrink-0';
-    avatar.textContent = sender === 'user' ? 'T' : 'N';
-    
-    const bubble = document.createElement('div');
-    bubble.className = (sender === 'user' ? 'bg-blue-600 text-white rounded-2xl rounded-tr-none' : 'bg-white rounded-2xl rounded-tl-none') + ' p-4 shadow-sm max-w-[80%]';
-    bubble.textContent = text;
-    
-    div.appendChild(avatar);
-    div.appendChild(bubble);
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-}
-
-function addTypingIndicator() {
-    const container = document.getElementById('chat-container');
-    const id = 'typing-' + Date.now();
-    const div = document.createElement('div');
-    div.id = id;
-    div.className = 'flex space-x-3';
-    div.innerHTML = `
-        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-            N
-        </div>
-        <div class="bg-white rounded-2xl rounded-tl-none p-4 shadow-sm flex space-x-2">
-            <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-            <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-            <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
-        </div>
-    `;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-    return id;
-}
-
-function removeTypingIndicator(id) {
-    const el = document.getElementById(id);
-    if (el) el.remove();
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
 </script>
 {% endblock %}

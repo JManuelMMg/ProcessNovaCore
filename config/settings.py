@@ -25,12 +25,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-#2dmb0k-i&sja3!0hp9twm361^9qm9z28!rb1zvid&^mv^$aom')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY and not DEBUG:
+    raise ValueError('SECRET_KEY environment variable must be set in production!')
+elif not SECRET_KEY:
+    SECRET_KEY = 'django-insecure-#2dmb0k-i&sja3!0hp9twm361^9qm9z28!rb1zvid&^mv^$aom'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False' if os.environ.get('RENDER') else 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
@@ -54,14 +58,23 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    SESSION_COOKIE_HTTPONLY = True  # No permitir acceso desde JS
+    SESSION_COOKIE_SAMESITE = 'Strict'
 else:
     # For development, allow non-secure cookies
     CSRF_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
 
-# CSRF cookie settings for JavaScript access
+# CSRF cookie settings
 CSRF_COOKIE_HTTPONLY = False  # Allow JS to read the CSRF cookie
 CSRF_COOKIE_SAMESITE = 'Lax'  # Default, allows same-site requests
+
+# X-Frame-Options: DENY para prevenir clickjacking
+X_FRAME_OPTIONS = 'DENY'
+
+# Session timeout (1 hora de inactividad)
+SESSION_COOKIE_AGE = 3600  # 1 hora en segundos
+SESSION_SAVE_EVERY_REQUEST = True
 
 
 # Application definition

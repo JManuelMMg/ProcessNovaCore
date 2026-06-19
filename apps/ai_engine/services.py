@@ -75,35 +75,25 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "analizar_cliente_crm",
-            "description": "Analiza sentimiento y resumen del historial de interacciones del cliente. Devuelve JSON.",
+            "description": "Analiza sentimiento y resumen del historial de interacciones de TODOS los clientes. Devuelve JSON.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "cliente": {
-                        "type": "object",
-                        "description": "Datos básicos del cliente",
-                        "properties": {
-                            "id": {"type": "integer"},
-                            "nombre": {"type": "string"},
-                            "email": {"type": "string"}
-                        },
-                        "required": ["id", "nombre", "email"]
-                    },
-                    "interacciones": {
+                    "clientes": {
                         "type": "array",
-                        "description": "Historial de interacciones con el cliente",
+                        "description": "Lista de clientes con datos básicos",
                         "items": {
                             "type": "object",
                             "properties": {
-                                "tipo": {"type": "string", "enum": ["call", "email", "meeting", "chat", "other"]},
-                                "fecha": {"type": "string", "format": "date"},
-                                "contenido": {"type": "string"}
+                                "id": {"type": "integer"},
+                                "nombre": {"type": "string"},
+                                "email": {"type": "string"}
                             },
-                            "required": ["tipo", "fecha", "contenido"]
+                            "required": ["id", "nombre", "email"]
                         }
                     }
                 },
-                "required": ["cliente", "interacciones"]
+                "required": ["clientes"]
             }
         }
     },
@@ -270,49 +260,88 @@ def analizar_inventario_y_sugerir_compras(productos: List[Dict]) -> Dict:
     }
 
 
-def analizar_cliente_crm(cliente: Dict, interacciones: List[Dict]) -> Dict:
+def analizar_cliente_crm(clientes: List[Dict], interacciones_por_cliente: Dict = None) -> Dict:
     """
-    Función simulada de análisis de CRM.
+    Función de análisis de CRM para TODOS los clientes con datos EXACTOS.
     """
-    from datetime import datetime
-    
     # Análisis simple de sentimiento (palabras clave)
-    palabras_positivas = ["excelente", "feliz", "contento", "perfecto", "gracias", "mejor"]
-    palabras_negativas = ["mal", "enojo", "problema", "defectuoso", "queja", "insatisfecho"]
+    palabras_positivas = ["excelente", "feliz", "contento", "perfecto", "gracias", "mejor", "genial", "satisfactorio"]
+    palabras_negativas = ["mal", "enojo", "problema", "defectuoso", "queja", "insatisfecho", "horrible", "devolver"]
     
-    conteo_positivo = 0
-    conteo_negativo = 0
-    puntos_clave = []
+    resumen_clientes = []
+    total_positivo = 0
+    total_negativo = 0
+    total_interacciones = 0
+    total_clientes = len(clientes)
+    total_gastado_todos = 0
+    total_ventas_todas = 0
     
-    for interaccion in interacciones:
-        contenido = interaccion["contenido"].lower()
-        for palabra in palabras_positivas:
-            if palabra in contenido:
-                conteo_positivo += 1
-        for palabra in palabras_negativas:
-            if palabra in contenido:
-                conteo_negativo += 1
-        # Extraer puntos clave (primeras 50 caracteres de cada interacción)
-        puntos_clave.append(f"[{interaccion['fecha']} - {interaccion['tipo']}] {contenido[:70]}...")
+    for cliente in clientes:
+        cliente_id = cliente["id"]
+        interacciones = interacciones_por_cliente.get(cliente_id, []) if interacciones_por_cliente else []
+        
+        conteo_positivo = 0
+        conteo_negativo = 0
+        puntos_clave = []
+        
+        for interaccion in interacciones:
+            contenido = interaccion["contenido"].lower()
+            for palabra in palabras_positivas:
+                if palabra in contenido:
+                    conteo_positivo += 1
+            for palabra in palabras_negativas:
+                if palabra in contenido:
+                    conteo_negativo += 1
+            puntos_clave.append(f"[{interaccion['fecha']} - {interaccion['tipo']}] {contenido[:100]}")
+        
+        total_positivo += conteo_positivo
+        total_negativo += conteo_negativo
+        total_interacciones += len(interacciones)
+        total_gastado_todos += cliente.get("total_gastado", 0)
+        total_ventas_todas += cliente.get("total_ventas", 0)
+        
+        if conteo_positivo > conteo_negativo:
+            sentimiento = "positivo"
+        elif conteo_negativo > conteo_positivo:
+            sentimiento = "negativo"
+        else:
+            sentimiento = "neutral"
+        
+        resumen_clientes.append({
+            "cliente_id": cliente["id"],
+            "cliente_nombre": cliente["nombre"],
+            "cliente_email": cliente["email"],
+            "cliente_telefono": cliente.get("telefono", ""),
+            "sentimiento_general": sentimiento,
+            "conteo_sentimiento": {"positivo": conteo_positivo, "negativo": conteo_negativo, "neutral": max(0, len(interacciones) - conteo_positivo - conteo_negativo)},
+            "total_interacciones": len(interacciones),
+            "total_ventas": cliente.get("total_ventas", 0),
+            "total_gastado": cliente.get("total_gastado", 0),
+            "lifetime_value": cliente.get("lifetime_value", 0),
+            "ultima_interaccion": interacciones[-1]["fecha"] if interacciones else None,
+            "puntos_clave": puntos_clave[-10:],
+            "recomendacion": "Seguimiento personalizado y ofertas exclusivas" if sentimiento == "positivo" else "Contacto inmediato para resolver problemas" if sentimiento == "negativo" else "Mantenimiento de relación regular"
+        })
     
-    if conteo_positivo > conteo_negativo:
-        sentimiento = "positivo"
-    elif conteo_negativo > conteo_positivo:
-        sentimiento = "negativo"
+    if total_positivo > total_negativo:
+        sentimiento_general = "positivo"
+    elif total_negativo > total_positivo:
+        sentimiento_general = "negativo"
     else:
-        sentimiento = "neutral"
+        sentimiento_general = "neutral"
     
     return {
-        "cliente_id": cliente["id"],
-        "cliente_nombre": cliente["nombre"],
-        "cliente_email": cliente["email"],
-        "sentimiento_general": sentimiento,
-        "conteo_sentimiento": {"positivo": conteo_positivo, "negativo": conteo_negativo, "neutral": max(0, len(interacciones) - conteo_positivo - conteo_negativo)},
-        "total_interacciones": len(interacciones),
-        "ultima_interaccion": interacciones[-1]["fecha"] if interacciones else None,
-        "puntos_clave": puntos_clave[-5:],  # Últimos 5 puntos clave
-        "recomendaciones": [
-            "Seguimiento personalizado" if sentimiento == "positivo" else "Atención inmediata" if sentimiento == "negativo" else "Mantenimiento regular"
+        "total_clientes": total_clientes,
+        "total_interacciones": total_interacciones,
+        "total_ventas": total_ventas_todas,
+        "total_gastado": total_gastado_todos,
+        "sentimiento_general_global": sentimiento_general,
+        "conteo_sentimiento_global": {"positivo": total_positivo, "negativo": total_negativo, "neutral": max(0, total_interacciones - total_positivo - total_negativo)},
+        "resumen_por_cliente": resumen_clientes,
+        "recomendaciones_generales": [
+            "Continuar con el trato personalizado y mantener la calidad del servicio" if sentimiento_general == "positivo" else "Implementar plan de mejora de experiencia del cliente y encuestas de satisfacción",
+            f"Enfocarse en los {len([c for c in resumen_clientes if c['sentimiento_general'] == 'negativo'])} clientes con sentimiento negativo",
+            f"Promover ofertas a los {len([c for c in resumen_clientes if c['total_gastado'] > 0])} clientes que ya han comprado"
         ]
     }
 
@@ -538,17 +567,174 @@ def chat_with_ai(user_message, conversation_history=None, user=None, organizatio
         function_args = json.loads(tool_call.function.arguments)
         
         if function_name == "analizar_inventario_y_sugerir_compras":
-            tool_response = analizar_inventario_y_sugerir_compras(**function_args)
+            # Cargar datos de inventario directamente desde la BD
+            from apps.inventory.models import Product
+            productos_db = Product.objects.filter(
+                organization=organization
+            ).prefetch_related('stocks').all()
+
+            productos = []
+            for p in productos_db:
+                stock_total = sum(s.quantity for s in p.stocks.all())
+                productos.append({
+                    "id": p.id,
+                    "nombre": p.name,
+                    "stock_actual": stock_total,
+                    "stock_minimo": 10, 
+                    "ventas_ultimos_30d": 20,
+                    "precio_costo": float(p.cost) if p.cost else 0.0
+                })
+            tool_response = analizar_inventario_y_sugerir_compras(productos)
+            
         elif function_name == "analizar_cliente_crm":
-            tool_response = analizar_cliente_crm(**function_args)
+            # Cargar datos de CRM desde BD
+            from apps.crm.models import Customer
+            clientes_db = Customer.objects.for_org(organization).prefetch_related('interactions')
+
+            clientes = []
+            interacciones_por_cliente = {}
+
+            for cliente_db in clientes_db:
+                clientes.append({"id": cliente_db.id, "nombre": cliente_db.name, "email": cliente_db.email})
+                
+                interacciones_db = cliente_db.interactions.all()[:10]
+                interacciones_por_cliente[cliente_db.id] = [
+                    {"tipo": i.type, "fecha": i.created_at.strftime("%Y-%m-%d"), "contenido": i.notes or ''}
+                    for i in interacciones_db
+                ]
+
+            tool_response = analizar_cliente_crm(clientes, interacciones_por_cliente)
+            
         elif function_name == "analizar_finanzas":
-            tool_response = analizar_finanzas(**function_args)
+            from django.utils import timezone
+            from datetime import timedelta
+            from apps.finance.models import Income, Expense
+
+            today = timezone.localdate()
+            start = today - timedelta(days=30)
+            incomes_qs = Income.objects.for_org(organization).filter(date__gte=start, date__lte=today)
+            expenses_qs = Expense.objects.for_org(organization).filter(date__gte=start, date__lte=today)
+
+            ingresos = [{
+                "fecha": i.date.isoformat(),
+                "monto": float(i.amount),
+                "categoria": i.get_type_display() if hasattr(i, 'get_type_display') else i.type,
+            } for i in incomes_qs]
+            gastos = [{
+                "fecha": e.date.isoformat(),
+                "monto": float(e.amount),
+                "categoria": e.get_category_display() if hasattr(e, 'get_category_display') else e.category,
+            } for e in expenses_qs]
+
+            tool_response = analizar_finanzas(start.isoformat(), today.isoformat(), ingresos, gastos)
+            
         elif function_name == "recomendar_precios":
-            tool_response = recomendar_precios(**function_args)
+            from django.utils import timezone
+            from datetime import timedelta
+            from django.db.models import Sum
+            from apps.inventory.models import Product
+            from apps.sales.models import SaleItem
+
+            today = timezone.localdate()
+            start = today - timedelta(days=30)
+            productos = []
+            for product in Product.objects.for_org(organization).filter(is_active=True)[:50]:
+                ventas = SaleItem.objects.filter(
+                    organization=organization,
+                    product=product,
+                    sale__status='paid',
+                    sale__created_at__date__gte=start,
+                ).aggregate(total=Sum('quantity'))['total'] or 0
+                ventas = int(ventas)
+                demanda = 'alta' if ventas >= 20 else 'media' if ventas >= 5 else 'baja'
+                productos.append({
+                    "id": product.id,
+                    "nombre": product.name,
+                    "precio_actual": float(product.price),
+                    "precio_costo": float(product.cost or 0),
+                    "ventas_ultimos_30d": ventas,
+                    "demanda": demanda,
+                })
+            tool_response = recomendar_precios(productos)
+            
         elif function_name == "analizar_rrhh":
-            tool_response = analizar_rrhh(**function_args)
+            from django.utils import timezone
+            from datetime import timedelta
+            from apps.hr.models import Employee, Attendance, LeaveRequest, Payroll
+
+            today = timezone.localdate()
+            start = today - timedelta(days=30)
+            empleados = [{
+                "id": e.id,
+                "nombre": e.full_name,
+                "department": e.department.name if e.department else '',
+                "position": e.position.title if e.position else '',
+                "status": e.status,
+                "salary": float(e.salary),
+                "years_of_service": e.years_of_service,
+            } for e in Employee.objects.for_org(organization).select_related('department', 'position')]
+            asistencias = [{
+                "employee_id": a.employee_id,
+                "fecha": a.date.isoformat(),
+                "status": a.status,
+                "worked_hours": float(a.worked_hours),
+                "overtime_hours": float(a.overtime_hours),
+            } for a in Attendance.objects.for_org(organization).filter(date__gte=start, date__lte=today).select_related('employee')]
+            permisos = [{
+                "employee_id": p.employee_id,
+                "type": p.type,
+                "status": p.status,
+                "days": p.days,
+                "start_date": p.start_date.isoformat(),
+                "end_date": p.end_date.isoformat(),
+            } for p in LeaveRequest.objects.for_org(organization).filter(created_at__date__gte=start)]
+            nominas = [{
+                "employee_id": n.employee_id,
+                "period_start": n.period_start.isoformat(),
+                "period_end": n.period_end.isoformat(),
+                "gross_salary": float(n.gross_salary),
+                "net_salary": float(n.net_salary),
+                "status": n.status,
+            } for n in Payroll.objects.for_org(organization).filter(period_end__gte=start)]
+            tool_response = analizar_rrhh(empleados, asistencias, permisos, nominas)
+            
         elif function_name == "analizar_logistica":
-            tool_response = analizar_logistica(**function_args)
+            from django.utils import timezone
+            from datetime import timedelta
+            from apps.logistics.models import Shipment, Order, Route
+
+            today = timezone.localdate()
+            start = today - timedelta(days=30)
+            envios = [{
+                "id": s.id,
+                "tracking_number": s.tracking_number,
+                "status": s.status,
+                "carrier": s.carrier.name if s.carrier else '',
+                "route": s.route.name if s.route else '',
+                "shipping_city": s.shipping_city,
+                "shipping_state": s.shipping_state,
+                "shipping_cost": float(s.shipping_cost),
+                "delivery_attempts": s.delivery_attempts,
+                "estimated_delivery": s.estimated_delivery.isoformat() if s.estimated_delivery else None,
+            } for s in Shipment.objects.for_org(organization).filter(created_at__date__gte=start).select_related('carrier', 'route')]
+            pedidos = [{
+                "id": o.id,
+                "number": o.number,
+                "status": o.status,
+                "total": float(o.total),
+                "shipping_city": o.shipping_city,
+                "shipping_state": o.shipping_state,
+            } for o in Order.objects.for_org(organization).filter(created_at__date__gte=start)]
+            rutas = [{
+                "id": r.id,
+                "name": r.name,
+                "driver_name": r.driver_name,
+                "vehicle_plate": r.vehicle_plate,
+                "distance_km": float(r.distance_km or 0),
+                "estimated_hours": float(r.estimated_hours or 0),
+                "is_active": r.is_active,
+            } for r in Route.objects.for_org(organization)]
+            tool_response = analizar_logistica(envios, pedidos, rutas)
         
         function_called = function_name
         
