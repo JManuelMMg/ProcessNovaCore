@@ -58,23 +58,60 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SESSION_COOKIE_HTTPONLY = True  # No permitir acceso desde JS
+    SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Strict'
+    CSRF_COOKIE_HTTPONLY = False  # Allow JS to read the CSRF cookie
+    CSRF_COOKIE_SAMESITE = 'Lax'
 else:
     # For development, allow non-secure cookies
     CSRF_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
 
-# CSRF cookie settings
-CSRF_COOKIE_HTTPONLY = False  # Allow JS to read the CSRF cookie
-CSRF_COOKIE_SAMESITE = 'Lax'  # Default, allows same-site requests
-
 # X-Frame-Options: DENY para prevenir clickjacking
 X_FRAME_OPTIONS = 'DENY'
 
+# Content Security Policy (CSP) - Avanzado
+SECURE_CSP = {
+    'default-src': "'self'",
+    'script-src': "'self' 'unsafe-inline'",  # Puedes quitar 'unsafe-inline' si no es necesario
+    'style-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+    'img-src': "'self' data:",
+    'font-src': "'self'",
+    'connect-src': "'self'",
+    'object-src': "'none'",
+    'frame-ancestors': "'none'",
+}
+
+# Referrer-Policy
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
 # Session timeout (1 hora de inactividad)
-SESSION_COOKIE_AGE = 3600  # 1 hora en segundos
+SESSION_COOKIE_AGE = 3600
 SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Password validators (mejor seguridad en contraseñas)
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+# Protección contra ataques de fuerza bruta (simple)
+LOGIN_ATTEMPTS_LIMIT = 5
+LOGIN_TIMEOUT_MINUTES = 30
 
 
 # Application definition
@@ -101,6 +138,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.SecurityHeadersMiddleware',  # Nuestro middleware de seguridad
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
