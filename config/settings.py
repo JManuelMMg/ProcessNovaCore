@@ -50,7 +50,7 @@ if RENDER_EXTERNAL_HOSTNAME:
 # Seguridad SSL para producción (solo si DEBUG es False)
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_SECONDS = 31536000  # 1 año (incluye preload)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -58,23 +58,82 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SESSION_COOKIE_HTTPONLY = True  # No permitir acceso desde JS
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+    SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Strict'
+    CSRF_COOKIE_SAMESITE = 'Strict'
 else:
     # For development, allow non-secure cookies
     CSRF_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
 
-# CSRF cookie settings
-CSRF_COOKIE_HTTPONLY = False  # Allow JS to read the CSRF cookie
-CSRF_COOKIE_SAMESITE = 'Lax'  # Default, allows same-site requests
+# CSRF cookie settings (allow JS to read for AJAX)
+CSRF_COOKIE_HTTPONLY = False
 
 # X-Frame-Options: DENY para prevenir clickjacking
 X_FRAME_OPTIONS = 'DENY'
 
-# Session timeout (1 hora de inactividad)
-SESSION_COOKIE_AGE = 3600  # 1 hora en segundos
+# Content Security Policy (CSP) - muy estricto (django-csp 4.0+)
+CONTENT_SECURITY_POLICY = {
+    'REPORT_ONLY': False,
+    'DIRECTIVES': {
+        'default-src': ["'self'"],
+        'script-src': [
+            "'self'",
+            "'unsafe-inline'",
+            "'unsafe-eval'",  # Requerido por Tailwind Play CDN (compila clases en el navegador)
+            "https://cdn.jsdelivr.net",
+            "https://cdn.tailwindcss.com",
+        ],
+        'worker-src': ["'self'", "blob:"],
+        'media-src': ["'self'", "blob:"],
+        'style-src': [
+            "'self'",
+            "'unsafe-inline'",
+            "https://cdn.jsdelivr.net",
+            "https://cdn.tailwindcss.com",
+            "https://fonts.googleapis.com",
+        ],
+        'img-src': ["'self'", "data:", "https:"],
+        'font-src': ["'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com"],
+        'connect-src': [
+            "'self'",
+            "https://cdn.tailwindcss.com",
+            "https://cdn.jsdelivr.net",
+        ],
+        'object-src': ["'none'"],
+        'frame-ancestors': ["'none'"],
+        'base-uri': ["'self'"],
+        'form-action': ["'self'"],
+    },
+}
+
+# Session timeout (30 minutos de inactividad para más seguridad)
+SESSION_COOKIE_AGE = 1800  # 30 minutos
 SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Seguridad de passwords: más fuerte
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 10,
+        },
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
 
 
 # Application definition
@@ -87,6 +146,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'auditlog',
+    'csp',
+    'django_ratelimit',
     'core',
     'apps.users',
     'apps.inventory',
@@ -101,6 +162,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'csp.middleware.CSPMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -285,6 +347,13 @@ IMAP_PASSWORD = os.environ.get('IMAP_PASSWORD', EMAIL_HOST_PASSWORD)
 SITE_URL = os.environ.get('SITE_URL', 'http://localhost:8000')
 
 # Logging para producción
+# Silenciar advertencias de django-ratelimit y django-csp para desarrollo
+SILENCED_SYSTEM_CHECKS = [
+    'django_ratelimit.E003',
+    'django_ratelimit.W001',
+    'csp.E001',
+]
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

@@ -1,6 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from django.db.models import Sum, Count
+from django.utils import timezone
+from datetime import timedelta
 from core.permissions import permission_required, tenant_required
 from .models import Customer, Segment, Interaction, Lead, Opportunity, Campaign
 from .forms import CustomerForm, SegmentForm, InteractionForm, LeadForm, OpportunityForm, CampaignForm
@@ -215,3 +220,80 @@ def campaign_create(request):
     else:
         form = CampaignForm(organization=request.organization)
     return render(request, 'crm/campaign_form.html', {'form': form, 'title': 'Nueva Campaña'})
+
+
+@login_required
+@tenant_required
+@permission_required('crm')
+def crm_analytics(request):
+    """CRM analytics view."""
+    today = timezone.localdate()
+    start_month = today - timedelta(days=30)
+
+    customers = Customer.objects.for_org(request.organization)
+    leads = Lead.objects.for_org(request.organization)
+    opportunities = Opportunity.objects.for_org(request.organization)
+    interactions = Interaction.objects.for_org(request.organization)
+
+    total_customers = customers.count()
+    total_leads = leads.count()
+    total_opportunities = opportunities.count()
+    won_opportunities = opportunities.filter(stage='closed_won').count()
+
+    recent_interactions = interactions.filter(created_at__gte=start_month).count()
+    recent_leads = leads.filter(created_at__gte=start_month).count()
+
+    top_customers = customers.order_by('-lifetime_value')[:10]
+
+    return render(request, 'crm/analytics.html', {
+        'total_customers': total_customers,
+        'total_leads': total_leads,
+        'total_opportunities': total_opportunities,
+        'won_opportunities': won_opportunities,
+        'recent_interactions': recent_interactions,
+        'recent_leads': recent_leads,
+        'top_customers': top_customers
+    })
+
+
+@login_required
+@tenant_required
+@permission_required('crm')
+@require_GET
+def api_crm_stats(request):
+    """CRM analytics API endpoint."""
+    today = timezone.localdate()
+    start_month = today - timedelta(days=30)
+
+    customers = Customer.objects.for_org(request.organization)
+    leads = Lead.objects.for_org(request.organization)
+    opportunities = Opportunity.objects.for_org(request.organization)
+    interactions = Interaction.objects.for_org(request.organization)
+
+    total_customers = customers.count()
+    total_leads = leads.count()
+    total_opportunities = opportunities.count()
+    won_opportunities = opportunities.filter(stage='closed_won').count()
+
+    recent_interactions = interactions.filter(created_at__gte=start_month).count()
+    recent_leads = leads.filter(created_at__gte=start_month).count()
+
+    top_customers_data = []
+    for customer in customers.order_by('-lifetime_value')[:10]:
+        top_customers_data.append({
+            'id': customer.id,
+            'name': customer.name,
+            'email': customer.email,
+            'lifetime_value': float(customer.lifetime_value),
+            'total_orders': customer.total_orders
+        })
+
+    return JsonResponse({
+        'total_customers': total_customers,
+        'total_leads': total_leads,
+        'total_opportunities': total_opportunities,
+        'won_opportunities': won_opportunities,
+        'recent_interactions': recent_interactions,
+        'recent_leads': recent_leads,
+        'top_customers': top_customers_data
+    })

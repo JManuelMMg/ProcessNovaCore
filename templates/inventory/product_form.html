@@ -91,7 +91,8 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="/static/js/html5-qrcode.min.js"></script>
+<script src="/static/js/barcode-scanner.js"></script>
 <script>
 const csrfToken = '{{ csrf_token }}';
 let scanner = null;
@@ -129,11 +130,26 @@ function saveCategoryModal() {
 
 async function toggleCamera(fieldId) {
     const reader = document.getElementById('camera-reader');
-    if (scanner) { await scanner.stop(); scanner = null; reader.classList.add('hidden'); return; }
+    if (scanner) {
+        await ProcessNovaScanner.stop(scanner);
+        scanner = null;
+        reader.classList.add('hidden');
+        return;
+    }
     reader.classList.remove('hidden');
-    scanner = new Html5Qrcode('camera-reader');
-    await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 250, height: 120 } },
-        (text) => { document.getElementById(fieldId).value = text; scanner.stop(); scanner = null; reader.classList.add('hidden'); });
+    try {
+        scanner = await ProcessNovaScanner.start('camera-reader', async (text) => {
+            document.getElementById(fieldId).value = text;
+            await ProcessNovaScanner.stop(scanner);
+            scanner = null;
+            reader.classList.add('hidden');
+        });
+    } catch (error) {
+        console.error('Error starting scanner:', error);
+        alert('Error al activar la camara: ' + error.message);
+        reader.classList.add('hidden');
+        scanner = null;
+    }
 }
 
 document.getElementById('id_category').addEventListener('change', function() {

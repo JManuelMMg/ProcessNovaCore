@@ -5,9 +5,10 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum, Count, Avg
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation
+from datetime import timedelta, date
 import json
 
 from core.permissions import permission_required, tenant_required
@@ -218,10 +219,10 @@ def api_update_item_quantity(request):
     new_qty = item.quantity + delta
 
     if new_qty <= 0:
-        item.delete()
         sale = item.sale
+        item.delete()
         sale.calculate_total()
-        return JsonResponse({'success': True})
+        return JsonResponse({'success': True, 'cart': _serialize_cart(sale)})
 
     if available < new_qty:
         return JsonResponse({
@@ -233,7 +234,7 @@ def api_update_item_quantity(request):
     item.save()
     sale = item.sale
     sale.calculate_total()
-    return JsonResponse({'success': True})
+    return JsonResponse({'success': True, 'cart': _serialize_cart(sale)})
 
 
 @login_required
@@ -249,7 +250,7 @@ def api_remove_from_cart(request):
     sale = item.sale
     item.delete()
     sale.calculate_total()
-    return JsonResponse({'success': True})
+    return JsonResponse({'success': True, 'cart': _serialize_cart(sale)})
 
 
 @login_required
@@ -416,9 +417,18 @@ def api_switch_branch(request):
 @permission_required('pos')
 @require_GET
 def api_products_cache(request):
+    product_list = list(_products_qs(request).select_related('category'))
+    stock_map = {}
+    if request.branch:
+        stock_rows = Stock.objects.filter(
+            organization=request.organization,
+            branch=request.branch,
+            product_id__in=[p.id for p in product_list],
+        ).values_list('product_id', 'quantity')
+        stock_map = dict(stock_rows)
+
     products = []
-    for p in _products_qs(request).select_related('category'):
-        stock = _get_stock(p, request.branch)
+    for p in product_list:
         products.append({
             'id': p.id,
             'name': p.name,
@@ -426,7 +436,9 @@ def api_products_cache(request):
             'barcode': p.barcode or '',
             'price': float(p.price),
             'category_id': p.category_id,
-            'stock': stock.quantity if stock else 0,
+            'stock': stock_map.get(p.id, 0),
+            'tax_rate': float(p.tax_rate),
+            'is_taxable': p.is_taxable,
         })
     return JsonResponse({
         'products': products,
@@ -609,3 +621,126 @@ def sale_cancel(request, pk):
     sale.save()
     messages.success(request, f'Venta {sale.number} cancelada y stock revertido.')
     return redirect('sales:sale_list')
+
+
+@login_required
+@tenant_required
+@permission_required('sales_history')
+def sales_analytics(request):
+    """Sales analytics dashboard view."""
+    today = timezone.localdate()
+    start_week = today - timedelta(days=7)
+    start_month = today - timedelta(days=30)
+
+    sales_qs = _sales_qs(request).filter(status='paid')
+    sales_today = sales_qs.filter(created_at__date=today)
+    sales_week = sales_qs.filter(created_at__date__gte=start_week)
+    sales_month = sales_qs.filter(created_at__date__gte=start_month)
+
+    # Calculate totals
+    total_today = sales_today.aggregate(Sum('total'))['total__sum'] or 0
+    total_week = sales_week.aggregate(Sum('total'))['total__sum'] or 0
+    total_month = sales_month.aggregate(Sum('total'))['total__sum'] or 0
+    count_today = sales_today.count()
+    count_week = sales_week.count()
+    count_month = sales_month.count()
+    avg_order_value = sales_month.aggregate(Avg('total'))['total__avg'] or 0
+
+    # Top products by quantity sold
+    top_products = SaleItem.objects.filter(
+        organization=request.organization,
+        sale__in=sales_month
+    ).values('product__id', 'product__name').annotate(
+        total_quantity=Sum('quantity'),
+        total_revenue=Sum('total')
+    ).order_by('-total_quantity')[:10]
+
+    # Daily sales for chart (last 30 days)
+    daily_sales = []
+    for i in range(30):
+        day_date = today - timedelta(days=29 - i)
+        day_total = sales_qs.filter(created_at__date=day_date).aggregate(Sum('total'))['total__sum'] or 0
+        daily_sales.append({
+            'date': day_date.isoformat(),
+            'total': float(day_total)
+        })
+
+    # Sales by branch
+    from apps.users.models import Branch
+    sales_by_branch = []
+    for branch in Branch.objects.for_org(request.organization).filter(is_active=True):
+        branch_total = sales_qs.filter(branch=branch).aggregate(Sum('total'))['total__sum'] or 0
+        sales_by_branch.append({
+            'branch_name': branch.name,
+            'total': float(branch_total)
+        })
+
+    context = {
+        'total_today': float(total_today),
+        'total_week': float(total_week),
+        'total_month': float(total_month),
+        'count_today': count_today,
+        'count_week': count_week,
+        'count_month': count_month,
+        'avg_order_value': float(avg_order_value),
+        'top_products': list(top_products),
+        'daily_sales': daily_sales,
+        'sales_by_branch': sales_by_branch
+    }
+    return render(request, 'sales/analytics.html', context)
+
+
+@login_required
+@tenant_required
+@permission_required('sales_history')
+@require_GET
+def api_sales_stats(request):
+    """API endpoint for sales statistics."""
+    today = timezone.localdate()
+    start_week = today - timedelta(days=7)
+    start_month = today - timedelta(days=30)
+
+    sales_qs = _sales_qs(request).filter(status='paid')
+    sales_today = sales_qs.filter(created_at__date=today)
+    sales_week = sales_qs.filter(created_at__date__gte=start_week)
+    sales_month = sales_qs.filter(created_at__date__gte=start_month)
+
+    # Calculate totals
+    total_today = sales_today.aggregate(Sum('total'))['total__sum'] or 0
+    total_week = sales_week.aggregate(Sum('total'))['total__sum'] or 0
+    total_month = sales_month.aggregate(Sum('total'))['total__sum'] or 0
+    count_today = sales_today.count()
+    count_week = sales_week.count()
+    count_month = sales_month.count()
+    avg_order_value = sales_month.aggregate(Avg('total'))['total__avg'] or 0
+
+    # Top products by quantity sold
+    top_products = SaleItem.objects.filter(
+        organization=request.organization,
+        sale__in=sales_month
+    ).values('product__id', 'product__name').annotate(
+        total_quantity=Sum('quantity'),
+        total_revenue=Sum('total')
+    ).order_by('-total_quantity')[:10]
+
+    # Daily sales for chart (last 30 days)
+    daily_sales = []
+    for i in range(30):
+        day_date = today - timedelta(days=29 - i)
+        day_total = sales_qs.filter(created_at__date=day_date).aggregate(Sum('total'))['total__sum'] or 0
+        daily_sales.append({
+            'date': day_date.isoformat(),
+            'total': float(day_total)
+        })
+
+    return JsonResponse({
+        'total_today': float(total_today),
+        'total_week': float(total_week),
+        'total_month': float(total_month),
+        'count_today': count_today,
+        'count_week': count_week,
+        'count_month': count_month,
+        'avg_order_value': float(avg_order_value),
+        'top_products': list(top_products),
+        'daily_sales': daily_sales
+    })

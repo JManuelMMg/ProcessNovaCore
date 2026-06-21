@@ -20,3 +20,6 @@ db.sqlite3-journal
 # Docker
 *.swp
 *.swo
+
+# Node.js
+node_modules/

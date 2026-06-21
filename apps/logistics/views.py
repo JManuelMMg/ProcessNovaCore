@@ -2,12 +2,16 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from django.db.models import Sum, Count
 from core.permissions import permission_required, tenant_required
-from .models import Shipment, Route, Carrier, Order, OrderItem
+from .models import Shipment, Route, Carrier, Order, OrderItem, Vehicle
 from apps.inventory.models import Product, Stock
 from apps.crm.models import Customer
 from apps.sales.models import Sale, SaleItem
 from django.utils import timezone
+from datetime import timedelta
 
 
 @login_required
@@ -73,6 +77,73 @@ def route_list(request):
 def carrier_list(request):
     carriers = Carrier.objects.for_org(request.organization).filter(is_active=True)
     return render(request, 'logistics/carrier_list.html', {'carriers': carriers})
+
+
+@login_required
+@tenant_required
+@permission_required('logistics')
+def vehicle_list(request):
+    vehicles = Vehicle.objects.for_org(request.organization)
+    return render(request, 'logistics/vehicle_list.html', {'vehicles': vehicles})
+
+
+@login_required
+@tenant_required
+@permission_required('logistics')
+def vehicle_detail(request, pk):
+    vehicle = get_object_or_404(Vehicle.objects.for_org(request.organization), pk=pk)
+    return render(request, 'logistics/vehicle_detail.html', {'vehicle': vehicle})
+
+
+@login_required
+@tenant_required
+@permission_required('logistics')
+def vehicle_create(request):
+    if request.method == 'POST':
+        vehicle = Vehicle.objects.create(
+            organization=request.organization,
+            name=request.POST.get('name'),
+            plate=request.POST.get('plate'),
+            type=request.POST.get('type'),
+            status=request.POST.get('status'),
+            capacity_kg=request.POST.get('capacity_kg') or None,
+            capacity_volume=request.POST.get('capacity_volume') or None,
+            model=request.POST.get('model'),
+            year=request.POST.get('year') or None,
+            driver_name=request.POST.get('driver_name'),
+            driver_phone=request.POST.get('driver_phone'),
+            last_maintenance_date=request.POST.get('last_maintenance_date') or None,
+            next_maintenance_date=request.POST.get('next_maintenance_date') or None,
+            notes=request.POST.get('notes')
+        )
+        messages.success(request, 'Vehículo creado exitosamente!')
+        return redirect('logistics:vehicle_detail', pk=vehicle.pk)
+    return render(request, 'logistics/vehicle_form.html', {'editing': False})
+
+
+@login_required
+@tenant_required
+@permission_required('logistics')
+def vehicle_edit(request, pk):
+    vehicle = get_object_or_404(Vehicle.objects.for_org(request.organization), pk=pk)
+    if request.method == 'POST':
+        vehicle.name = request.POST.get('name')
+        vehicle.plate = request.POST.get('plate')
+        vehicle.type = request.POST.get('type')
+        vehicle.status = request.POST.get('status')
+        vehicle.capacity_kg = request.POST.get('capacity_kg') or None
+        vehicle.capacity_volume = request.POST.get('capacity_volume') or None
+        vehicle.model = request.POST.get('model')
+        vehicle.year = request.POST.get('year') or None
+        vehicle.driver_name = request.POST.get('driver_name')
+        vehicle.driver_phone = request.POST.get('driver_phone')
+        vehicle.last_maintenance_date = request.POST.get('last_maintenance_date') or None
+        vehicle.next_maintenance_date = request.POST.get('next_maintenance_date') or None
+        vehicle.notes = request.POST.get('notes')
+        vehicle.save()
+        messages.success(request, 'Vehículo actualizado exitosamente!')
+        return redirect('logistics:vehicle_detail', pk=vehicle.pk)
+    return render(request, 'logistics/vehicle_form.html', {'editing': True, 'vehicle': vehicle})
 
 
 @login_required
@@ -196,3 +267,64 @@ def order_fulfill(request, pk):
             messages.success(request, f'Pedido surtido exitosamente! Venta creada: {sale.number}')
             return redirect('sales:sale_detail', pk=sale.pk)
     return render(request, 'logistics/order_confirm_fulfill.html', {'order': order})
+
+
+@login_required
+@tenant_required
+@permission_required('logistics')
+def logistics_analytics(request):
+    """Logistics analytics view."""
+    today = timezone.localdate()
+    start_month = today - timedelta(days=30)
+
+    shipments = Shipment.objects.for_org(request.organization).filter(created_at__date__gte=start_month)
+    total_shipments = shipments.count()
+    delivered_shipments = shipments.filter(status='delivered').count()
+    failed_shipments = shipments.filter(status__in=['failed', 'returned']).count()
+    in_transit_shipments = shipments.filter(status__in=['picked_up', 'in_transit', 'out_for_delivery']).count()
+    total_shipping_cost = shipments.aggregate(Sum('shipping_cost'))['shipping_cost__sum'] or 0
+
+    orders = Order.objects.for_org(request.organization).filter(created_at__date__gte=start_month)
+    total_orders = orders.count()
+    pending_orders = orders.filter(status='pending').count()
+
+    return render(request, 'logistics/analytics.html', {
+        'total_shipments': total_shipments,
+        'delivered_shipments': delivered_shipments,
+        'failed_shipments': failed_shipments,
+        'in_transit_shipments': in_transit_shipments,
+        'total_shipping_cost': float(total_shipping_cost),
+        'total_orders': total_orders,
+        'pending_orders': pending_orders
+    })
+
+
+@login_required
+@tenant_required
+@permission_required('logistics')
+@require_GET
+def api_logistics_stats(request):
+    """Logistics analytics API endpoint."""
+    today = timezone.localdate()
+    start_month = today - timedelta(days=30)
+
+    shipments = Shipment.objects.for_org(request.organization).filter(created_at__date__gte=start_month)
+    total_shipments = shipments.count()
+    delivered_shipments = shipments.filter(status='delivered').count()
+    failed_shipments = shipments.filter(status__in=['failed', 'returned']).count()
+    in_transit_shipments = shipments.filter(status__in=['picked_up', 'in_transit', 'out_for_delivery']).count()
+    total_shipping_cost = shipments.aggregate(Sum('shipping_cost'))['shipping_cost__sum'] or 0
+
+    orders = Order.objects.for_org(request.organization).filter(created_at__date__gte=start_month)
+    total_orders = orders.count()
+    pending_orders = orders.filter(status='pending').count()
+
+    return JsonResponse({
+        'total_shipments': total_shipments,
+        'delivered_shipments': delivered_shipments,
+        'failed_shipments': failed_shipments,
+        'in_transit_shipments': in_transit_shipments,
+        'total_shipping_cost': float(total_shipping_cost),
+        'total_orders': total_orders,
+        'pending_orders': pending_orders
+    })

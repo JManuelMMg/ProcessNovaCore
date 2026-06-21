@@ -413,7 +413,7 @@ function showResults(data, type) {
                             <div class="mt-3 pt-3 border-t ${cliente.sentimiento_general === 'negativo' ? 'border-red-200' : cliente.sentimiento_general === 'positivo' ? 'border-green-200' : 'border-gray-200'}">
                                 <p class="text-xs font-semibold text-gray-700 mb-2">Últimas Interacciones:</p>
                                 <ul class="text-xs text-gray-600 space-y-1">
-                                    ${cliente.puntos_clave.map(p => `<li>${p}</li>`).join('')}
+                                    ${cliente.puntos_clave.map(p => `<li>[${p.fecha}] (${p.tipo}): ${p.contenido}</li>`).join('')}
                                 </ul>
                             </div>
                         ` : ''}
@@ -576,10 +576,11 @@ function showResults(data, type) {
             </div>
         `;
     } else if (type === 'logistica' || type === 'analizar_logistica') {
+        const hasAlerts = data.resumen.envios_fallidos > 0 || data.pedidos_pendientes > 0;
         html = `
-            <div class="mb-6 p-6 rounded-2xl ${data.alerta ? 'bg-amber-50 border-2 border-amber-300' : 'bg-green-50 border-2 border-green-300'}">
-                <h4 class="text-xl font-bold ${data.alerta ? 'text-amber-800' : 'text-green-800'} mb-3">
-                    ${data.alerta ? '⚠️ Logística requiere seguimiento' : '✅ Operación logística estable'}
+            <div class="mb-6 p-6 rounded-2xl ${hasAlerts ? 'bg-amber-50 border-2 border-amber-300' : 'bg-green-50 border-2 border-green-300'}">
+                <h4 class="text-xl font-bold ${hasAlerts ? 'text-amber-800' : 'text-green-800'} mb-3">
+                    ${hasAlerts ? '⚠️ Logística requiere seguimiento' : '✅ Operación logística estable'}
                 </h4>
                 <p class="text-sm text-gray-600 mb-4">${data.pedidos_pendientes} pedidos pendientes, ${data.resumen.envios_fallidos} envíos fallidos</p>
                 <div class="grid grid-cols-2 gap-4">
@@ -607,6 +608,139 @@ function showResults(data, type) {
                 <ul class="space-y-2">
                     ${data.recomendaciones.map(r => `<li class="text-sm text-blue-700 list-disc list-inside">${r}</li>`).join('')}
                 </ul>
+            </div>
+        `;
+    } else if (type === 'obtener_ventas_recientes') {
+        html = `
+            <div class="mb-6">
+                <h4 class="text-lg font-bold text-gray-800 mb-4">Ventas Recientes (${data.total_ventas})</h4>
+                <div class="space-y-4 max-h-96 overflow-y-auto">
+                    ${data.ventas.map(v => `
+                        <div class="p-5 rounded-2xl border border-gray-200 bg-white">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="font-bold text-lg text-gray-900">Venta #${v.numero}</p>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                                    ${v.estado}
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Cliente: ${v.cliente}</p>
+                            <p class="text-sm text-gray-600 mb-3">Fecha: ${v.fecha} | Vendedor: ${v.vendedor} | Tipo: ${v.tipo}</p>
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div class="text-center p-3 bg-gray-50 rounded-xl shadow-sm">
+                                    <p class="text-xs text-gray-600">Items</p>
+                                    <p class="text-lg font-bold text-gray-800">${v.items.length}</p>
+                                </div>
+                                <div class="text-center p-3 bg-green-50 rounded-xl shadow-sm">
+                                    <p class="text-xs text-gray-600">Total</p>
+                                    <p class="text-lg font-bold text-green-800">$${v.total.toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <div class="pt-3 border-t border-gray-200">
+                                <h6 class="text-xs font-semibold text-gray-700 mb-2">Items:</h6>
+                                <ul class="text-xs text-gray-600 space-y-1">
+                                    ${v.items.map(i => `<li>${i.producto}: ${i.cantidad} x $${i.precio_unitario.toLocaleString()} = $${i.total.toLocaleString()}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } else if (type === 'obtener_productos_bajo_stock') {
+        html = `
+            <div class="mb-6 p-6 rounded-2xl ${data.productos.length > 0 ? 'bg-amber-50 border-2 border-amber-300' : 'bg-green-50 border-2 border-green-300'}">
+                <h4 class="text-xl font-bold ${data.productos.length > 0 ? 'text-amber-800' : 'text-green-800'} mb-3">
+                    ${data.productos.length > 0 ? '⚠️ Productos con Stock Bajo' : '✅ No hay productos con stock bajo'}
+                </h4>
+                <p class="text-sm text-gray-600 mb-4">${data.productos.length} productos con stock bajo</p>
+            </div>
+            ${data.productos.length > 0 ? `
+                <h4 class="text-lg font-bold text-gray-800 mb-4">Productos a Reabastecer</h4>
+                <div class="space-y-4 max-h-96 overflow-y-auto">
+                    ${data.productos.map(p => `
+                        <div class="p-5 rounded-2xl border border-amber-200 bg-amber-50">
+                            <p class="font-bold text-lg text-gray-900 mb-2">${p.producto_nombre}</p>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                    <p class="text-xs text-gray-600">Stock Actual</p>
+                                    <p class="text-lg font-bold text-amber-800">${p.stock_actual}</p>
+                                </div>
+                                <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                    <p class="text-xs text-gray-600">Stock Mínimo</p>
+                                    <p class="text-lg font-bold text-gray-800">${p.stock_minimo}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
+        `;
+    } else if (type === 'obtener_clientes_top') {
+        html = `
+            <div class="mb-6">
+                <h4 class="text-lg font-bold text-gray-800 mb-4">Top Clientes (${data.clientes.length})</h4>
+                <div class="space-y-4 max-h-96 overflow-y-auto">
+                    ${data.clientes.map((c, index) => `
+                        <div class="p-5 rounded-2xl border border-purple-200 bg-purple-50">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="font-bold text-lg text-gray-900">${index + 1}. ${c.cliente_nombre}</p>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-200 text-purple-800">
+                                    ${c.total_compras} compras
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Email: ${c.cliente_email || 'N/A'}</p>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                    <p class="text-xs text-gray-600">Total Gastado</p>
+                                    <p class="text-lg font-bold text-purple-800">$${c.total_gastado.toLocaleString()}</p>
+                                </div>
+                                <div class="text-center p-3 bg-white rounded-xl shadow-sm">
+                                    <p class="text-xs text-gray-600">Promedio por Compra</p>
+                                    <p class="text-lg font-bold text-gray-800">$${c.promedio_compra.toLocaleString()}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } else if (type === 'generar_reporte_ventas') {
+        html = `
+            <div class="mb-6 p-6 rounded-2xl border-2 border-indigo-300 bg-indigo-50">
+                <h4 class="text-xl font-bold text-indigo-800 mb-3">📊 Reporte de Ventas</h4>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-indigo-800">${data.total_ventas}</p>
+                        <p class="text-sm text-gray-600">Ventas</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-green-800">$${data.total_ingresos.toLocaleString()}</p>
+                        <p class="text-sm text-gray-600">Ingresos</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-orange-800">${data.total_productos_vendidos}</p>
+                        <p class="text-sm text-gray-600">Productos Vendidos</p>
+                    </div>
+                    <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+                        <p class="text-2xl font-bold text-blue-800">${data.total_clientes_atendidos}</p>
+                        <p class="text-sm text-gray-600">Clientes Atendidos</p>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">Período: ${data.periodo_inicio} - ${data.periodo_fin}</p>
+            </div>
+            
+            <div class="mt-6 p-5 bg-blue-50 rounded-2xl border border-blue-200">
+                <h5 class="font-bold text-blue-800 mb-2">💡 Recomendaciones:</h5>
+                <ul class="space-y-2">
+                    ${data.recomendaciones.map(r => `<li class="text-sm text-blue-700 list-disc list-inside">${r}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    } else {
+        html = `
+            <div class="p-6 rounded-2xl border border-gray-200 bg-white">
+                <h4 class="text-xl font-bold text-gray-800 mb-3">Resultados</h4>
+                <pre class="text-sm text-gray-600 bg-gray-50 p-4 rounded-xl overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>
             </div>
         `;
     }

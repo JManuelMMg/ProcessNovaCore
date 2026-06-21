@@ -14,6 +14,8 @@ urlpatterns = [
     path('stocks/', views.stock_list, name='stock_list'),
     path('intake/', views.stock_intake, name='stock_intake'),
     path('movements/', views.movement_list, name='movement_list'),
+    path('low-stock/', views.low_stock_alerts, name='low_stock_alerts'),
     path('api/quick-create/', views.api_quick_create, name='api_quick_create'),
     path('api/add-stock/', views.api_add_stock, name='api_add_stock'),
+    path('api/low-stock/', views.api_low_stock, name='api_low_stock'),
 ]

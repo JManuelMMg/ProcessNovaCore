@@ -112,7 +112,8 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="/static/js/html5-qrcode.min.js"></script>
+<script src="/static/js/barcode-scanner.js"></script>
 <script>
 const csrfToken = '{{ csrf_token }}';
 let scanner = null;
@@ -190,30 +191,30 @@ document.getElementById('quantity-input').addEventListener('keypress', function(
 
 async function toggleCamera() {
     const reader = document.getElementById('camera-reader');
-    if (scanner) { 
-        try { await scanner.stop(); } catch(e) {}
-        scanner = null; 
-        reader.classList.add('hidden'); 
-        return; 
+    if (scanner) {
+        await ProcessNovaScanner.stop(scanner);
+        scanner = null;
+        reader.classList.add('hidden');
+        return;
     }
     reader.classList.remove('hidden');
     try {
-        scanner = new Html5Qrcode('camera-reader');
-        await scanner.start(
-            { facingMode: 'environment' }, 
-            { fps: 10, qrbox: { width: 250, height: 120 } },
-            function(text) { 
-                document.getElementById('barcode-input').value = text; 
-                try { scanner.stop(); } catch(e) {}
-                scanner = null; 
-                reader.classList.add('hidden'); 
-                confirmAndAddStock('scan'); 
-            }
-        );
+        scanner = await ProcessNovaScanner.start('camera-reader', async function(text) {
+            document.getElementById('barcode-input').value = text;
+            await ProcessNovaScanner.stop(scanner);
+            scanner = null;
+            reader.classList.add('hidden');
+            confirmAndAddStock('scan');
+        });
     } catch (error) {
-        showResult('Error al activar la cámara: ' + error.message, 'error');
+        showResult('Error al activar la camara: ' + error.message, 'error');
         reader.classList.add('hidden');
+        scanner = null;
     }
+}
+
+function normalizeCode(value) {
+    return String(value || '').trim().toLowerCase();
 }
 
 // Función de confirmación
@@ -238,7 +239,9 @@ function confirmAndAddStock(mode) {
             return;
         }
         // Intentamos encontrar el producto por barcode
-        const product = products.find(p => p.barcode === barcode || p.sku === barcode);
+        const product = products.find(function(p) {
+            return normalizeCode(p.barcode) === normalizeCode(barcode) || normalizeCode(p.sku) === normalizeCode(barcode);
+        });
         productName = product ? product.name : `Producto con código: ${barcode}`;
     }
 

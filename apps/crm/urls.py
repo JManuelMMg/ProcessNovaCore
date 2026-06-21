@@ -25,4 +25,7 @@ urlpatterns = [
     
     path('interactions/', views.interaction_list, name='interaction_list'),
     path('interactions/new/', views.interaction_create, name='interaction_create'),
+
+    path('analytics/', views.crm_analytics, name='crm_analytics'),
+    path('api/stats/', views.api_crm_stats, name='api_crm_stats'),
 ]

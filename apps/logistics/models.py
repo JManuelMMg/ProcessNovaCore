@@ -52,11 +52,48 @@ class ShippingRate(TenantAwareModel):
         return f"{self.carrier.name} - {self.zone.name}"
 
 
+class Vehicle(TenantAwareModel):
+    TYPE_CHOICES = [
+        ('truck', 'Camión'),
+        ('van', 'Camioneta'),
+        ('motorcycle', 'Motocicleta'),
+        ('bike', 'Bicicleta'),
+        ('other', 'Otro'),
+    ]
+
+    STATUS_CHOICES = [
+        ('available', 'Disponible'),
+        ('in_use', 'En uso'),
+        ('maintenance', 'Mantenimiento'),
+        ('out_of_service', 'Fuera de servicio'),
+    ]
+
+    name = models.CharField(max_length=255, help_text='Nombre o identificador del vehículo')
+    plate = models.CharField(max_length=50, unique=True, help_text='Placa del vehículo')
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES, default='truck')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='available')
+    capacity_kg = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text='Capacidad en kilogramos')
+    capacity_volume = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text='Capacidad en metros cúbicos')
+    model = models.CharField(max_length=255, blank=True)
+    year = models.IntegerField(blank=True, null=True)
+    driver_name = models.CharField(max_length=255, blank=True)
+    driver_phone = models.CharField(max_length=20, blank=True)
+    last_maintenance_date = models.DateField(blank=True, null=True)
+    next_maintenance_date = models.DateField(blank=True, null=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.plate})"
+
+
 class Route(TenantAwareModel):
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=50, blank=True)
     description = models.TextField(blank=True)
     origin = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True, related_name='routes_origin')
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, related_name='routes')
     driver_name = models.CharField(max_length=255, blank=True)
     driver_phone = models.CharField(max_length=20, blank=True)
     vehicle_plate = models.CharField(max_length=50, blank=True)
@@ -111,6 +148,7 @@ class Shipment(TenantAwareModel):
     carrier = models.ForeignKey(Carrier, on_delete=models.SET_NULL, null=True, blank=True, related_name='shipments')
     tracking_number = models.CharField(max_length=100, blank=True, unique=True)
     route = models.ForeignKey(Route, on_delete=models.SET_NULL, null=True, blank=True, related_name='shipments')
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, related_name='shipments')
     shipping_address = models.TextField(blank=True)
     shipping_city = models.CharField(max_length=100, blank=True)
     shipping_state = models.CharField(max_length=100, blank=True)
@@ -230,6 +268,7 @@ class OrderItem(TenantAwareModel):
 auditlog.register(Carrier)
 auditlog.register(Zone)
 auditlog.register(ShippingRate)
+auditlog.register(Vehicle)
 auditlog.register(Route)
 auditlog.register(Package)
 auditlog.register(Shipment)

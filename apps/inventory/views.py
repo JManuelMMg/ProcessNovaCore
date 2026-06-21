@@ -2,7 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Sum, Q
 import json
 
 from core.permissions import permission_required, tenant_required
@@ -290,9 +293,9 @@ def api_add_stock(request):
     if product_id:
         product = _products_qs(request).filter(pk=product_id).first()
     elif barcode:
-        product = _products_qs(request).filter(barcode=barcode).first()
-        if not product:
-            product = _products_qs(request).filter(sku__iexact=barcode).first()
+        product = _products_qs(request).filter(
+            Q(barcode__iexact=barcode) | Q(sku__iexact=barcode)
+        ).first()
     if not product:
         return JsonResponse({'error': 'Producto no encontrado'}, status=404)
     if not request.branch:
@@ -322,4 +325,42 @@ def api_add_stock(request):
         'success': True,
         'product_name': product.name,
         'new_quantity': stock.quantity,
+    })
+
+
+@login_required
+@tenant_required
+@permission_required('inventory_view')
+def low_stock_alerts(request):
+    """View to show low stock alerts."""
+    stocks = _stocks_qs(request)
+    low_stock = []
+    for stock in stocks:
+        if stock.quantity <= stock.min_quantity:
+            low_stock.append(stock)
+    return render(request, 'inventory/low_stock.html', {'low_stock': low_stock})
+
+
+@login_required
+@tenant_required
+@permission_required('inventory_view')
+@require_GET
+def api_low_stock(request):
+    """API endpoint to get low stock products."""
+    stocks = _stocks_qs(request)
+    low_stock_data = []
+    for stock in stocks:
+        if stock.quantity <= stock.min_quantity:
+            low_stock_data.append({
+                'product_id': stock.product.id,
+                'product_name': stock.product.name,
+                'product_sku': stock.product.sku,
+                'stock_quantity': stock.quantity,
+                'min_quantity': stock.min_quantity,
+                'branch_name': stock.branch.name if stock.branch else 'General',
+                'needs_restock': True
+            })
+    return JsonResponse({
+        'low_stock': low_stock_data,
+        'count': len(low_stock_data)
     })

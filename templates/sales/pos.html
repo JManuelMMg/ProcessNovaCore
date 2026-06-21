@@ -152,8 +152,9 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="/static/js/pos-offline.js"></script>
+<script src="/static/js/html5-qrcode.min.js"></script>
+<script src="/static/js/barcode-scanner.js"></script>
 <script>
 function getCookie(name) {
     let cookieValue = null;
@@ -224,6 +225,22 @@ function normalizeCode(value) {
     return String(value || '').trim().toLowerCase();
 }
 
+function calculateCartTotals(items) {
+    let subtotal = 0;
+    let tax = 0;
+    items.forEach((item) => {
+        const lineSubtotal = item.quantity * item.unit_price;
+        subtotal += lineSubtotal;
+        const product = cachedProducts.find((p) => p.id === item.product_id);
+        const taxRate = product ? Number(product.tax_rate || 0) : 0;
+        const taxable = product ? product.is_taxable !== false : true;
+        if (taxable && taxRate > 0) {
+            tax += lineSubtotal * (taxRate / 100);
+        }
+    });
+    return { subtotal, tax, total: subtotal + tax };
+}
+
 function getScanQuantity() {
     const value = parseInt(document.getElementById('scan-quantity').value, 10);
     return Number.isFinite(value) && value > 0 ? value : 1;
@@ -250,6 +267,7 @@ function focusScanner() {
 function showScanFeedback(message, type = 'info') {
     const el = document.getElementById('scan-feedback');
     el.textContent = message;
+    el.classList.remove('hidden');
     el.className = 'text-xs px-2.5 py-1 rounded-full ' + (
         type === 'ok' ? 'bg-emerald-100 text-emerald-700' :
         type === 'error' ? 'bg-red-100 text-red-700' :
@@ -259,9 +277,11 @@ function showScanFeedback(message, type = 'info') {
 
 function clearScanFeedback() {
     const el = document.getElementById('scan-feedback');
+    el.textContent = '';
     el.classList.add('hidden');
 }
-
+</script>
+<script>
 function money(value) {
     return '$' + (Number(value) || 0).toFixed(2);
 }
@@ -275,29 +295,28 @@ function escapeHtml(value) {
 async function toggleCamera() {
     const reader = document.getElementById('camera-reader');
     if (scanner) {
-        await scanner.stop();
+        await ProcessNovaScanner.stop(scanner);
         scanner = null;
         reader.classList.add('hidden');
         focusScanner();
         return;
     }
     reader.classList.remove('hidden');
-    scanner = new Html5Qrcode('camera-reader');
-    await scanner.start(
-        { facingMode: 'environment' },
-        { 
-            fps: 10, 
-            qrbox: { width: 250, height: 250 }, 
-            aspectRatio: 1.0
-        },
-        async (text) => {
+    try {
+        scanner = await ProcessNovaScanner.start('camera-reader', async (text) => {
             document.getElementById('barcode-scan').value = text;
-            await scanner.stop();
+            await ProcessNovaScanner.stop(scanner);
             scanner = null;
             reader.classList.add('hidden');
             scanBarcode();
-        }
-    );
+        });
+    } catch (error) {
+        console.error('Error starting scanner:', error);
+        const errorMessage = error.message || 'Error al acceder a la camara';
+        showScanFeedback(errorMessage, 'error');
+        reader.classList.add('hidden');
+        scanner = null;
+    }
 }
 
 async function scanBarcode() {
@@ -423,43 +442,118 @@ function quickCreateAndAdd() {
 
 async function addProduct(productId, quantity = getScanQuantity()) {
     quantity = Math.max(1, parseInt(quantity, 10) || 1);
-    if (!navigator.onLine) {
-        const product = cachedProducts.find((item) => item.id === productId);
-        if (product) addProductOffline(product, quantity);
+    const product = cachedProducts.find((item) => Number(item.id) === Number(productId));
+    if (!product) {
+        showScanFeedback('Producto no encontrado', 'error');
         return;
     }
-    const response = await fetch('/sales/api/add-to-cart/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-        body: JSON.stringify({ product_id: productId, quantity, sale_type: currentSaleType })
-    });
-    const data = await response.json();
-    if (data.error) {
-        showScanFeedback(data.error, 'error');
-    } else if (data.cart) {
-        applyCartData(data.cart);
-    } else {
-        await loadCart();
+
+    let unitPrice = Number(product.price);
+    if (currentSaleType === 'wholesale') {
+        unitPrice *= 0.9;
     }
+
+    const existingItem = cartItems.find((item) => Number(item.product_id) === Number(productId));
+    if (existingItem) {
+        existingItem.quantity += quantity;
+        existingItem.subtotal = existingItem.quantity * existingItem.unit_price;
+    } else {
+        cartItems.push({
+            id: `tmp-${productId}-${Date.now()}`,
+            product_id: productId,
+            product_name: product.name,
+            quantity,
+            unit_price: unitPrice,
+            subtotal: quantity * unitPrice,
+        });
+    }
+
+    cartTotals = calculateCartTotals(cartItems);
+    renderCartItems(cartItems, false);
+    renderTotals();
+    showScanFeedback(`${product.name} agregado x${quantity}`, 'ok');
+    focusScanner();
+
+    if (!navigator.onLine) {
+        addProductOffline(product, quantity);
+        return;
+    }
+
+    try {
+        const response = await fetch('/sales/api/add-to-cart/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ product_id: productId, quantity, sale_type: currentSaleType }),
+        });
+        const data = await response.json();
+        if (!response.ok || data.error) {
+            showScanFeedback(data.error || 'Error al agregar producto', 'error');
+            await loadCart();
+            return;
+        }
+        if (data.cart) {
+            syncCartFromServer(data.cart, true);
+        }
+    } catch (error) {
+        console.error('Error adding product:', error);
+        showScanFeedback('Error de conexion al sincronizar carrito', 'error');
+    }
+}
+
+function isTempItemId(itemId) {
+    return typeof itemId === 'string' && itemId.startsWith('tmp-');
 }
 
 function updateItemQuantity(itemId, delta) {
+    if (isTempItemId(itemId)) {
+        showScanFeedback('Sincronizando producto, espera un momento', 'info');
+        return;
+    }
+    const itemIndex = cartItems.findIndex((item) => item.id === itemId);
+    if (itemIndex === -1) return;
+
+    const item = cartItems[itemIndex];
+    item.quantity = Math.max(1, item.quantity + delta);
+    item.subtotal = item.quantity * item.unit_price;
+    cartTotals = calculateCartTotals(cartItems);
+    renderCartItems(cartItems, false);
+    renderTotals();
+
     fetch('/sales/api/update-item-quantity/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-        body: JSON.stringify({ item_id: itemId, delta })
+        body: JSON.stringify({ item_id: itemId, delta }),
     }).then((response) => response.json()).then((data) => {
-        if (data.error) showScanFeedback(data.error, 'error');
-        else loadCart();
-    });
+        if (data.error) {
+            showScanFeedback(data.error, 'error');
+            loadCart();
+            return;
+        }
+        if (data.cart) {
+            syncCartFromServer(data.cart, true);
+        }
+    }).catch(() => loadCart());
 }
 
 function removeItem(itemId) {
+    cartItems = cartItems.filter((item) => item.id !== itemId);
+    cartTotals = calculateCartTotals(cartItems);
+    renderCartItems(cartItems, false);
+    renderTotals();
+
+    if (isTempItemId(itemId)) {
+        return;
+    }
+
     fetch('/sales/api/remove-from-cart/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-        body: JSON.stringify({ item_id: itemId })
-    }).then(() => loadCart());
+        body: JSON.stringify({ item_id: itemId }),
+    }).then((response) => response.json()).then((data) => {
+        if (data.cart) {
+            syncCartFromServer(data.cart, true);
+        }
+    }).catch(() => loadCart());
 }
 
 function loadCart() {
@@ -477,6 +571,31 @@ function applyCartData(data) {
         total: Number(data.total || 0),
     };
     renderCartItems(cartItems, false);
+    renderTotals();
+}
+
+function syncCartFromServer(data, reRenderItems = false) {
+    if (!data) return;
+    cartTotals = {
+        subtotal: Number(data.subtotal || 0),
+        tax: Number(data.tax || 0),
+        total: Number(data.total || 0),
+    };
+    const serverItems = data.items || [];
+    if (serverItems.length) {
+        cartItems = serverItems.map((item) => ({
+            id: item.id,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            quantity: item.quantity,
+            unit_price: Number(item.unit_price),
+            subtotal: Number(item.subtotal),
+        }));
+        reRenderItems = true;
+    }
+    if (reRenderItems) {
+        renderCartItems(cartItems, false);
+    }
     renderTotals();
 }
 

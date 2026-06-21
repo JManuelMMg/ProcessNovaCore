@@ -48,6 +48,16 @@ class NotificationPreference(TenantAwareModel):
 
 
 class Notification(TenantAwareModel):
+    TYPE_CHOICES = [
+        ('sale', 'Venta'),
+        ('stock_alert', 'Alerta de stock'),
+        ('lead', 'Lead'),
+        ('opportunity', 'Oportunidad'),
+        ('leave_request', 'Solicitud de permiso'),
+        ('shipment', 'Envío'),
+        ('system', 'Sistema'),
+    ]
+
     CHANNEL_CHOICES = [
         ('email', 'Email'),
         ('push', 'Push'),
@@ -79,12 +89,14 @@ class Notification(TenantAwareModel):
     customer = models.ForeignKey('crm.Customer', on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
     template = models.ForeignKey(NotificationTemplate, on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications')
-    channel = models.CharField(max_length=20, choices=CHANNEL_CHOICES)
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES, default='system', blank=True)
+    channel = models.CharField(max_length=20, choices=CHANNEL_CHOICES, default='in_app')
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
     title = models.CharField(max_length=255)
     message = models.TextField()
     html_message = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    link = models.URLField(max_length=500, blank=True, help_text='Enlace para ver más detalles')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='read')  # For in-app notifications, default to read/pending?
     scheduled_at = models.DateTimeField(null=True, blank=True, help_text='Fecha y hora programada para enviar')
     sent_at = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)

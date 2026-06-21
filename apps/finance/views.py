@@ -2,7 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_GET
+from django.utils import timezone
+from datetime import timedelta
 
 from core.permissions import permission_required, tenant_required
 from apps.sales.models import Sale
@@ -152,3 +155,47 @@ def income_list(request):
 def expense_list(request):
     expenses = Expense.objects.for_org(request.organization)
     return render(request, 'finance/expense_list.html', {'expenses': expenses})
+
+
+@login_required
+@tenant_required
+@permission_required('finance')
+@require_GET
+def api_finance_stats(request):
+    """Finance analytics API endpoint."""
+    org = request.organization
+    today = timezone.localdate()
+    week_ago = today - timedelta(days=7)
+    month_ago = today - timedelta(days=30)
+
+    # Datos de facturación
+    total_invoices = Invoice.objects.for_org(org).count()
+    stamped = Invoice.objects.for_org(org).filter(cfdi_status='stamped').count()
+
+    # Datos de ingresos y gastos
+    total_income = Income.objects.for_org(org).aggregate(Sum('amount'))['amount__sum'] or 0
+    total_expense = Expense.objects.for_org(org).aggregate(Sum('amount'))['amount__sum'] or 0
+    income_month = Income.objects.for_org(org).filter(date__gte=month_ago).aggregate(Sum('amount'))['amount__sum'] or 0
+    expense_month = Expense.objects.for_org(org).filter(date__gte=month_ago).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    # Datos de ventas
+    total_sales = Sale.objects.for_org(org).filter(status='paid').aggregate(Sum('total'))['total__sum'] or 0
+    sales_count = Sale.objects.for_org(org).filter(status='paid').count()
+    sales_today = Sale.objects.for_org(org).filter(status='paid', created_at__date=today).aggregate(Sum('total'))['total__sum'] or 0
+    sales_week = Sale.objects.for_org(org).filter(status='paid', created_at__date__gte=week_ago).aggregate(Sum('total'))['total__sum'] or 0
+    sales_month = Sale.objects.for_org(org).filter(status='paid', created_at__date__gte=month_ago).aggregate(Sum('total'))['total__sum'] or 0
+
+    return JsonResponse({
+        'total_invoices': total_invoices,
+        'stamped_invoices': stamped,
+        'total_income': float(total_income),
+        'total_expense': float(total_expense),
+        'balance': float(total_income - total_expense),
+        'income_month': float(income_month),
+        'expense_month': float(expense_month),
+        'total_sales': float(total_sales),
+        'sales_count': sales_count,
+        'sales_today': float(sales_today),
+        'sales_week': float(sales_week),
+        'sales_month': float(sales_month)
+    })
