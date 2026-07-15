@@ -11,10 +11,7 @@ services:
         value: "False"
       - key: SECRET_KEY
         generateValue: true
-      - key: DATABASE_URL
-        fromDatabase:
-          name: processnova-db
-          property: connectionString
+      # Set DATABASE_URL in Render dashboard to your Neon connection string.
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
@@ -40,7 +37,3 @@ services:
       - key: ALLOWED_HOSTS
         value: processnovacore.onrender.com
 
-databases:
-  - name: processnova-db
-    databaseName: processnova
-    user: processnova

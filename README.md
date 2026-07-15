@@ -74,7 +74,7 @@ Sistema integral de gestión empresarial para pequeñas y medianas empresas que 
 Configura estas variables en tu entorno:
 - `SECRET_KEY`: Clave secreta de Django
 - `DEBUG`: Establece en False en producción
-- `DATABASE_URL`: URL de conexión a PostgreSQL
+- `DATABASE_URL`: URL de conexión a PostgreSQL. Para Neon usa la cadena completa con `sslmode=require&channel_binding=require`.
 - `ALLOWED_HOSTS`: Hosts permitidos
 
 ## Despliegue
